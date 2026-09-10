@@ -1,0 +1,6 @@
+{
+  "name": "LoyerPro - Gestion Locative & Immobilier International",
+  "description": "Plateforme internationale de gestion locative et portail immobilier certifié pour locataires, propriétaires et agences en Afrique et dans le monde.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
