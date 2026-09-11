@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Database,
+  Tag,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SupabaseConfigModal } from '../ui/SupabaseConfigModal';
@@ -31,8 +33,10 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
     { label: 'Vue Globale', path: '/superadmin/dashboard', icon: LayoutDashboard },
     { label: 'Gestion Utilisateurs', path: '/superadmin/users', icon: Users },
     { label: 'Tous les Biens', path: '/superadmin/properties', icon: Building },
+    { label: 'Plans & Tarifs', path: '/superadmin/plans', icon: Tag },
     { label: 'Abonnements', path: '/superadmin/subscriptions', icon: CreditCard },
     { label: 'Transactions FedaPay', path: '/superadmin/payments', icon: DollarSign },
+    { label: 'Analytique (Google)', path: '/superadmin/analytics', icon: BarChart3 },
     { label: 'Configuration & SQL', path: '/superadmin/settings', icon: Settings },
   ];
 

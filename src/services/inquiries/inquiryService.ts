@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import { emailService } from '../email/emailService';
 import type { Inquiry } from '../../types';
 
 const STORAGE_KEY = 'loyerpro_data_inquiries';
@@ -27,6 +28,28 @@ export const inquiryService = {
         .single();
 
       if (error) throw error;
+
+      // Notifie le propriétaire/l'agence par email - non bloquant
+      supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', inquiry.owner_id)
+        .single()
+        .then(
+          ({ data: owner }) => {
+            if (owner?.email) {
+              emailService.sendNewInquiry(owner.email, {
+                ownerName: owner.full_name,
+                propertyTitle: (data as any)?.property?.title || 'votre bien',
+                visitorName: inquiry.visitor_name,
+                visitorPhone: inquiry.visitor_phone,
+                message: inquiry.message,
+              }).catch(() => {});
+            }
+          },
+          () => {}
+        );
+
       return data as Inquiry;
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -6,6 +6,8 @@ import { Check, ShieldCheck, CreditCard, Smartphone, HelpCircle, Globe, MapPin }
 import { useAuth } from '../../contexts/AuthContext';
 import { useGeo } from '../../contexts/GeoContext';
 import { getPricingPlansList } from '../../services/currency/currencyService';
+import { planService } from '../../services/plans/planService';
+import type { SubscriptionPlan } from '../../types';
 import { LocationSelectorModal } from '../../components/layout/LocationSelectorModal';
 
 export function PricingPage() {
@@ -13,8 +15,26 @@ export function PricingPage() {
   const { user } = useAuth();
   const { currentCountry, currentCurrency } = useGeo();
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [dbPlans, setDbPlans] = useState<SubscriptionPlan[] | undefined>(undefined);
 
-  const plans = getPricingPlansList(currentCurrency);
+  // Les plans (prix, options) sont pilotés par le SuperAdmin depuis /superadmin/plans.
+  // On les charge ici et on les convertit dans la devise locale du visiteur.
+  useEffect(() => {
+    let cancelled = false;
+    planService
+      .getAllPlans(false)
+      .then(plans => {
+        if (!cancelled) setDbPlans(plans);
+      })
+      .catch(() => {
+        if (!cancelled) setDbPlans(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const plans = getPricingPlansList(currentCurrency, dbPlans);
 
   const handleSelectPlan = (planId: string) => {
     if (!user) {

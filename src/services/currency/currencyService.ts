@@ -154,6 +154,27 @@ export function getPricingForCurrency(currency: string): PlanLocalizedPricing {
   return REGIONAL_PRICING[currency] || REGIONAL_PRICING.EUR;
 }
 
+// Taux de conversion approximatifs depuis le XOF (référence : prix saisis par le
+// superadmin dans Plans & Tarifs, toujours exprimés en XOF). Permet d'afficher un
+// prix cohérent dans la devise locale du visiteur SANS dupliquer une grille de
+// prix par devise : le superadmin ne pilote qu'une seule source de vérité (la DB).
+export const XOF_EXCHANGE_RATES: Record<string, number> = {
+  XOF: 1,
+  XAF: 1, // parité fixe CFA
+  EUR: 1 / 655.96, // parité fixe XOF/EUR
+  USD: 1 / 610,
+  CAD: 1 / 450,
+  MAD: 1 / 61,
+};
+
+function convertFromXof(amountXof: number, currency: string): number {
+  const rate = XOF_EXCHANGE_RATES[currency] ?? XOF_EXCHANGE_RATES.EUR;
+  const converted = amountXof * rate;
+  // Arrondi "propre" : entiers pour FCFA, 2 décimales max pour les autres devises
+  if (currency === 'XOF' || currency === 'XAF') return Math.round(converted);
+  return Math.round(converted * 100) / 100;
+}
+
 export interface FormattedSubscriptionPlan {
   id: string;
   name: string;
@@ -166,7 +187,33 @@ export interface FormattedSubscriptionPlan {
   highlight?: boolean;
 }
 
-export function getPricingPlansList(currency: string): FormattedSubscriptionPlan[] {
+/**
+ * Construit la liste des plans affichés sur la page tarifs publique.
+ *
+ * Si `basePlans` est fourni (chargé depuis la base via planService, donc
+ * piloté par le SuperAdmin dans Plans & Tarifs), les prix, noms, descriptions
+ * et fonctionnalités proviennent directement de la base — seule la conversion
+ * de devise est calculée ici. Sans connexion Supabase, on retombe sur une
+ * grille par défaut pour que la page reste fonctionnelle hors-ligne.
+ */
+export function getPricingPlansList(currency: string, basePlans?: Array<{ id: string; name: string; price: number; description: string; features: string[]; max_properties: number; is_featured?: boolean; interval?: string }>): FormattedSubscriptionPlan[] {
+  if (basePlans && basePlans.length > 0) {
+    return basePlans.map(plan => {
+      const convertedPrice = convertFromXof(plan.price, currency);
+      return {
+        id: plan.id,
+        name: plan.name,
+        price: convertedPrice,
+        formattedPrice: convertedPrice === 0 ? 'Gratuit' : formatCurrencyAmount(convertedPrice, currency),
+        period: plan.interval === 'year' ? 'an' : 'mois',
+        description: plan.description,
+        features: plan.features,
+        max_properties: plan.max_properties,
+        highlight: plan.is_featured,
+      };
+    });
+  }
+
   const p = getPricingForCurrency(currency);
 
   return [

@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import { emailService } from '../email/emailService';
 import type { SubscriptionPlan, Subscription, Transaction } from '../../types';
 
 export const DEFAULT_PLANS: SubscriptionPlan[] = [
@@ -201,6 +202,28 @@ export const subscriptionService = {
           payment_method: paymentMethod || 'FedaPay Mobile Money',
         });
       }
+
+      // Email de confirmation d'abonnement - non bloquant
+      supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', userId)
+        .single()
+        .then(
+          ({ data: prof }) => {
+            if (prof?.email) {
+              emailService.sendSubscriptionConfirmed(prof.email, {
+                fullName: prof.full_name,
+                planName: plan.name,
+                amount: plan.price,
+                currency: plan.currency,
+                interval: plan.interval,
+                transactionId: fedapayTransactionId,
+              }).catch(() => {});
+            }
+          },
+          () => {}
+        );
 
       return data as Subscription;
     }

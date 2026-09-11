@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { getSupabase, getSupabaseConfig, setCustomSupabaseConfig } from '../services/supabase/client';
+import { emailService } from '../services/email/emailService';
 import type { Profile, UserRole, VerificationDocument, VerificationStatus } from '../types';
 
 interface AuthContextType {
@@ -202,6 +203,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.from('profiles').upsert(newProf);
         setUser({ id: data.user.id, email: params.email });
         setProfile(newProf);
+
+        // Email de bienvenue - non bloquant, ne doit jamais empêcher l'inscription
+        emailService.sendWelcome(params.email, { fullName: params.fullName, role: params.role }).catch(() => {});
       }
       return {};
     } else {
@@ -232,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(newProf);
       localStorage.setItem('loyerpro_local_user', JSON.stringify(u));
       localStorage.setItem('loyerpro_local_profile', JSON.stringify(newProf));
+      emailService.sendWelcome(params.email, { fullName: params.fullName, role: params.role }).catch(() => {});
       return {};
     }
   };
@@ -252,15 +257,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verifiedAt = status === 'verified' ? new Date().toISOString() : undefined;
 
     if (supabase) {
-      const { error } = await supabase
+      const { data: targetProfile, error } = await supabase
         .from('profiles')
         .update({
           verification_status: status,
           verified_at: verifiedAt,
           rejection_reason: reason || null,
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('email, full_name')
+        .single();
       if (error) return { error: error.message };
+
+      // Notifie le propriétaire/l'agence du résultat de la vérification - non bloquant
+      if (targetProfile?.email) {
+        if (status === 'verified') {
+          emailService.sendAccountVerified(targetProfile.email, { fullName: targetProfile.full_name }).catch(() => {});
+        } else if (status === 'rejected') {
+          emailService.sendAccountRejected(targetProfile.email, { fullName: targetProfile.full_name, reason }).catch(() => {});
+        }
+      }
     }
 
     // Update local users list if present

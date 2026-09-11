@@ -1,7 +1,8 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GeoProvider } from './contexts/GeoContext';
+import { trackPageView } from './lib/gtag';
 
 // Layouts
 import { PublicNavbar } from './components/layout/PublicNavbar';
@@ -44,6 +45,17 @@ import { SuperAdminPropertiesPage } from './pages/superadmin/SuperAdminPropertie
 import { SuperAdminSubscriptionsPage } from './pages/superadmin/SuperAdminSubscriptionsPage';
 import { SuperAdminPaymentsPage } from './pages/superadmin/SuperAdminPaymentsPage';
 import { SuperAdminSettingsPage } from './pages/superadmin/SuperAdminSettingsPage';
+import { SuperAdminPlansPage } from './pages/superadmin/SuperAdminPlansPage';
+import { SuperAdminAnalyticsPage } from './pages/superadmin/SuperAdminAnalyticsPage';
+
+// Envoie un événement page_view à Google Analytics à chaque changement de route
+function AnalyticsRouteTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+  return null;
+}
 
 // Helper component for public page frame
 function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -58,7 +70,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 
 // Protected Route wrapper for Owner/Dashboard
 function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isSuperAdmin, loading, isSupabaseConfigured } = useAuth();
 
   if (loading) {
     return (
@@ -68,13 +80,23 @@ function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow access for testing / local use even before signup, but prompt login if desired
+  // Une fois Supabase connecté, l'espace propriétaire/agence exige une session valide.
+  // Avant configuration (premier lancement local), on laisse passer pour permettre la démo.
+  if (isSupabaseConfigured && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Le superadmin garde son propre espace dédié
+  if (isSuperAdmin) {
+    return <Navigate to="/superadmin/dashboard" replace />;
+  }
+
   return <OwnerLayout>{children}</OwnerLayout>;
 }
 
 // Protected Route wrapper for SuperAdmin
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
-  const { isSuperAdmin, loading } = useAuth();
+  const { user, isSuperAdmin, loading, isSupabaseConfigured } = useAuth();
 
   if (loading) {
     return (
@@ -82,6 +104,14 @@ function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
         <div className="text-xs text-slate-400 font-medium">Vérification des droits d'administration...</div>
       </div>
     );
+  }
+
+  if (isSupabaseConfigured && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isSupabaseConfigured && !isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <SuperAdminLayout>{children}</SuperAdminLayout>;
@@ -92,6 +122,7 @@ export default function App() {
     <AuthProvider>
       <GeoProvider>
         <BrowserRouter>
+          <AnalyticsRouteTracker />
           <Routes>
             {/* Public Portal */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -133,8 +164,10 @@ export default function App() {
           <Route path="/superadmin/dashboard" element={<ProtectedAdminRoute><SuperAdminDashboardPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/users" element={<ProtectedAdminRoute><SuperAdminUsersPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/properties" element={<ProtectedAdminRoute><SuperAdminPropertiesPage /></ProtectedAdminRoute>} />
+          <Route path="/superadmin/plans" element={<ProtectedAdminRoute><SuperAdminPlansPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/subscriptions" element={<ProtectedAdminRoute><SuperAdminSubscriptionsPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/payments" element={<ProtectedAdminRoute><SuperAdminPaymentsPage /></ProtectedAdminRoute>} />
+          <Route path="/superadmin/analytics" element={<ProtectedAdminRoute><SuperAdminAnalyticsPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/settings" element={<ProtectedAdminRoute><SuperAdminSettingsPage /></ProtectedAdminRoute>} />
 
           {/* Fallback */}
