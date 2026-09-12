@@ -15,6 +15,26 @@ function saveLocalPayments(items: Payment[]) {
   }
 }
 
+/**
+ * La colonne en base s'appelle `period_month` (voir supabase/migrations),
+ * mais toute l'interface (PaymentsListPage, FinancialReportsPage, le
+ * formulaire...) lit/écrit `payment.month`. On centralise ici la
+ * traduction entre les deux pour que TOUT le reste du code puisse
+ * continuer à utiliser `month` sans rien changer.
+ */
+function toDbRow(payment: Record<string, any>): Record<string, any> {
+  const { month, is_published, ...rest } = payment;
+  return {
+    ...rest,
+    period_month: payment.period_month || month,
+  };
+}
+
+function fromDbRow(row: any): Payment {
+  if (!row) return row;
+  return { ...row, month: row.period_month };
+}
+
 export const paymentService = {
   async getMyPayments(userId?: string): Promise<Payment[]> {
     const supabase = getSupabase();
@@ -32,8 +52,11 @@ export const paymentService = {
         .eq('user_id', uid)
         .order('payment_date', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Payment[];
+      if (error) {
+        console.error('[paymentService] getMyPayments error:', error.message);
+        throw error;
+      }
+      return (data || []).map(fromDbRow);
     }
 
     const items = getLocalPayments();
@@ -51,15 +74,16 @@ export const paymentService = {
     if (supabase) {
       if (!uid) {
         const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id || '00000000-0000-0000-0000-000000000000';
+        uid = user?.id;
       }
+      if (!uid) throw new Error('Utilisateur non authentifié : impossible d\'enregistrer le paiement.');
 
-      const payload = {
+      const payload = toDbRow({
         payment_method: 'MTN Mobile Money',
         status: 'completed',
         ...payment,
         user_id: uid,
-      };
+      });
 
       const { data, error } = await supabase
         .from('payments')
@@ -67,8 +91,11 @@ export const paymentService = {
         .select('*, property:properties(*), tenant:tenants(*)')
         .single();
 
-      if (error) throw error;
-      return data as Payment;
+      if (error) {
+        console.error('[paymentService] createPayment error:', error.message);
+        throw error;
+      }
+      return fromDbRow(data);
     }
 
     const items = getLocalPayments();
@@ -90,13 +117,16 @@ export const paymentService = {
     if (supabase) {
       const { data, error } = await supabase
         .from('payments')
-        .update(updates)
+        .update(toDbRow(updates))
         .eq('id', id)
         .select('*, property:properties(*), tenant:tenants(*)')
         .single();
 
-      if (error) throw error;
-      return data as Payment;
+      if (error) {
+        console.error('[paymentService] updatePayment error:', error.message);
+        throw error;
+      }
+      return fromDbRow(data);
     }
 
     const items = getLocalPayments();
@@ -112,7 +142,10 @@ export const paymentService = {
     const supabase = getSupabase();
     if (supabase) {
       const { error } = await supabase.from('payments').delete().eq('id', id);
-      if (error) throw error;
+      if (error) {
+        console.error('[paymentService] deletePayment error:', error.message);
+        throw error;
+      }
       return;
     }
 

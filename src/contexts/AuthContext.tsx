@@ -174,13 +174,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: params.email,
         password: params.password,
         options: {
+          // Sans ce paramètre, Supabase utilise la "Site URL" configurée
+          // dans le tableau de bord (Authentication > URL Configuration),
+          // qui pointe par défaut sur localhost:3000. On force ici l'URL
+          // réelle du domaine sur lequel l'app tourne (Vercel en prod,
+          // localhost en dev), pour que le lien de confirmation reçu par
+          // email renvoie toujours au bon endroit.
+          emailRedirectTo: `${window.location.origin}/auth/login`,
           data: {
             full_name: params.fullName,
             phone: params.phone,
             role: params.role,
             agency_name: params.agencyName || null,
-            country: params.country || 'Côte d’Ivoire',
-            city: params.city || 'Abidjan',
+            country: params.country,
+            city: params.city,
             verification_status: status,
           },
         },
@@ -194,8 +201,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: params.phone,
           role: params.role,
           agency_name: params.agencyName,
-          country: params.country || "Côte d'Ivoire",
-          city: params.city || 'Abidjan',
+          country: params.country,
+          city: params.city,
           verification_status: status,
           verification_documents: params.verificationDocuments || [],
         };
@@ -223,8 +230,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: params.phone,
         role: params.role,
         agency_name: params.agencyName,
-        country: params.country || "Côte d'Ivoire",
-        city: params.city || 'Abidjan',
+        country: params.country,
+        city: params.city,
         verification_status: status,
         verification_documents: params.verificationDocuments || [],
       };
