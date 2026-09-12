@@ -15,6 +15,7 @@ import {
   AlertCircle,
   X,
   FileText,
+  MailCheck,
 } from 'lucide-react';
 
 export function RegisterPage() {
@@ -22,6 +23,7 @@ export function RegisterPage() {
   const { signUp } = useAuth();
   const { currentCountry, availableCountries } = useGeo();
 
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [role, setRole] = useState<UserRole>('owner');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -111,10 +113,35 @@ export function RegisterPage() {
 
     if (res.error) {
       setError(res.error);
+    } else if (res.requiresEmailConfirmation) {
+      setAwaitingConfirmation(true);
     } else {
       navigate('/dashboard');
     }
   };
+
+  if (awaitingConfirmation) {
+    return (
+      <div className="min-h-[85vh] flex flex-col justify-center items-center py-12 px-4 bg-slate-50 text-center">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xs p-8 space-y-4">
+          <div className="mx-auto h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center">
+            <MailCheck className="h-7 w-7 text-emerald-600" />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">Vérifiez votre boîte mail</h1>
+          <p className="text-sm text-slate-600">
+            Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre
+            compte, puis connectez-vous.
+          </p>
+          <p className="text-xs text-slate-400">
+            Vous ne voyez rien ? Vérifiez vos courriers indésirables, ou patientez quelques minutes.
+          </p>
+          <Link to="/login">
+            <Button className="w-full mt-2">Aller à la page de connexion</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">

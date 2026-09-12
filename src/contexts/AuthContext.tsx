@@ -24,7 +24,7 @@ interface AuthContextType {
     country?: string;
     city?: string;
     verificationDocuments?: VerificationDocument[];
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; requiresEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error?: string }>;
   submitVerificationDocuments: (documents: VerificationDocument[]) => Promise<{ error?: string }>;
@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     country?: string;
     city?: string;
     verificationDocuments?: VerificationDocument[];
-  }): Promise<{ error?: string }> => {
+  }): Promise<{ error?: string; requiresEmailConfirmation?: boolean }> => {
     const status: VerificationStatus = params.verificationDocuments && params.verificationDocuments.length > 0 
       ? 'pending' 
       : 'unverified';
@@ -189,10 +189,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             country: params.country,
             city: params.city,
             verification_status: status,
+            // Important : c'est le trigger handle_new_user() (base de
+            // données, migration 0004) qui lit ces métadonnées pour créer
+            // le profil complet. On ne peut pas compter sur un upsert
+            // client juste après, car tant que l'email n'est pas confirmé
+            // il n'y a pas de session active et les policies RLS bloquent
+            // l'écriture.
+            verification_documents: params.verificationDocuments || [],
           },
         },
       });
       if (error) return { error: error.message };
+
+      // Pas de session = confirmation d'email requise avant de pouvoir se
+      // connecter. Il ne faut surtout pas considérer l'utilisateur comme
+      // connecté ni le renvoyer vers /dashboard dans ce cas : la session
+      // n'existe pas encore, aucune requête authentifiée ne fonctionnera.
+      if (!data.session) {
+        return { requiresEmailConfirmation: true };
+      }
+
       if (data.user) {
         const newProf: Profile = {
           id: data.user.id,
@@ -206,7 +222,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           verification_status: status,
           verification_documents: params.verificationDocuments || [],
         };
-        // Ensure profile row exists
+        // Une session active existe déjà (confirmation d'email désactivée
+        // sur ce projet) : on peut écrire immédiatement sans attendre.
         await supabase.from('profiles').upsert(newProf);
         setUser({ id: data.user.id, email: params.email });
         setProfile(newProf);
