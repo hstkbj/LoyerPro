@@ -17,23 +17,20 @@ import {
   X,
   ExternalLink,
   Plus,
-  Database,
   ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
-import { SupabaseConfigModal } from '../ui/SupabaseConfigModal';
 
 interface OwnerLayoutProps {
   children: React.ReactNode;
 }
 
 export function OwnerLayout({ children }: OwnerLayoutProps) {
-  const { profile, signOut, isSuperAdmin, isAgency, isSupabaseConfigured } = useAuth();
+  const { profile, signOut, isSuperAdmin, isAgency } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [configModalOpen, setConfigModalOpen] = useState(false);
 
   const navItems = [
     { label: 'Tableau de bord', path: '/dashboard', icon: LayoutDashboard },
@@ -109,19 +106,8 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           )}
         </div>
 
-        {/* Quick actions & DB Status */}
+        {/* Quick actions */}
         <div className="p-3 border-t border-slate-200 space-y-2">
-          <button
-            onClick={() => setConfigModalOpen(true)}
-            className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              <Database className="h-3.5 w-3.5 text-slate-500" />
-              <span>Base Supabase</span>
-            </span>
-            <span className={`h-2 w-2 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          </button>
-
           <Link
             to="/"
             target="_blank"
@@ -174,16 +160,6 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => setConfigModalOpen(true)}
-              className="hidden sm:inline-flex text-xs h-8 text-slate-600"
-            >
-              <Database className="mr-1.5 h-3.5 w-3.5" />
-              {isSupabaseConfigured ? 'Supabase Connecté' : 'Config Supabase'}
-            </Button>
-
-            <Button
-              size="sm"
               variant="primary"
               onClick={() => navigate('/dashboard/properties/create')}
               className="text-xs h-8"
@@ -226,8 +202,6 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
-
-      <SupabaseConfigModal isOpen={configModalOpen} onClose={() => setConfigModalOpen(false)} />
     </div>
   );
 }

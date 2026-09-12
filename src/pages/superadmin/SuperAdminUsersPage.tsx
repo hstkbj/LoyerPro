@@ -16,10 +16,12 @@ import {
   FileText,
   Building,
   ExternalLink,
+  Ban,
+  RotateCcw,
 } from 'lucide-react';
 
 export function SuperAdminUsersPage() {
-  const { adminVerifyUser } = useAuth();
+  const { adminVerifyUser, adminToggleSuspend } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +60,15 @@ export function SuperAdminUsersPage() {
     if (selectedDocUser?.id === userId) {
       setSelectedDocUser(null);
     }
+  };
+
+  const handleToggleSuspend = async (userId: string, currentlySuspended: boolean) => {
+    const confirmMsg = currentlySuspended
+      ? 'Réactiver ce compte ? Il pourra de nouveau se connecter.'
+      : 'Suspendre ce compte ? Il ne pourra plus se connecter tant que vous ne le réactivez pas.';
+    if (!confirm(confirmMsg)) return;
+    await adminToggleSuspend(userId, !currentlySuspended);
+    await loadUsers();
   };
 
   const filteredUsers = users.filter((u) => {
@@ -221,6 +232,12 @@ export function SuperAdminUsersPage() {
                           Non vérifié
                         </span>
                       )}
+                      {u.is_suspended && (
+                        <span className="ml-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-white">
+                          <Ban className="h-3.5 w-3.5" />
+                          Suspendu
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3.5">
@@ -261,6 +278,24 @@ export function SuperAdminUsersPage() {
                           Refuser
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleSuspend(u.id, Boolean(u.is_suspended))}
+                        className={`text-xs py-1 ${u.is_suspended ? 'text-emerald-700 hover:bg-emerald-50 border-emerald-200' : 'text-slate-600 hover:bg-slate-100 border-slate-300'}`}
+                      >
+                        {u.is_suspended ? (
+                          <>
+                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                            Réactiver
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="h-3.5 w-3.5 mr-1" />
+                            Suspendre
+                          </>
+                        )}
+                      </Button>
                     </td>
                   </tr>
                 );

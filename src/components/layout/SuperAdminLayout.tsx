@@ -9,25 +9,28 @@ import {
   DollarSign,
   Settings,
   ArrowLeft,
+  LogOut,
   Menu,
   X,
-  Database,
   Tag,
   BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { SupabaseConfigModal } from '../ui/SupabaseConfigModal';
 
 interface SuperAdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   const adminNav = [
     { label: 'Vue Globale', path: '/superadmin/dashboard', icon: LayoutDashboard },
@@ -81,22 +84,19 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
         {/* Footer */}
         <div className="p-3 border-t border-slate-800 space-y-2">
           <button
-            onClick={() => setConfigModalOpen(true)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800 text-[11px] text-slate-300 hover:text-white"
-          >
-            <span className="flex items-center gap-2">
-              <Database className="h-3.5 w-3.5 text-amber-400" />
-              <span>Base de données</span>
-            </span>
-            <span className="text-[10px] text-slate-400">PostgreSQL</span>
-          </button>
-
-          <button
             onClick={() => navigate('/dashboard')}
             className="w-full flex items-center justify-center gap-2 py-2 text-xs text-slate-400 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Retour Espace Bailleur</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 text-xs text-rose-300 hover:text-rose-100 bg-slate-800 rounded-lg hover:bg-rose-900/40 transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Déconnexion</span>
           </button>
         </div>
       </aside>
@@ -124,6 +124,13 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
           <div className="flex items-center gap-3 text-xs">
             <span className="text-slate-500 hidden sm:inline">{profile?.email}</span>
             <span className="h-2 w-2 rounded-full bg-emerald-500" title="Système opérationnel" />
+            <button
+              onClick={handleLogout}
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              title="Déconnexion"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </header>
 
@@ -153,13 +160,17 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
             >
               Retour à l'Espace Propriétaire
             </button>
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-3 py-2 text-xs text-rose-300 font-medium"
+            >
+              Déconnexion
+            </button>
           </div>
         )}
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
-
-      <SupabaseConfigModal isOpen={configModalOpen} onClose={() => setConfigModalOpen(false)} />
     </div>
   );
 }

@@ -29,6 +29,7 @@ interface AuthContextType {
   updateProfile: (updates: Partial<Profile>) => Promise<{ error?: string }>;
   submitVerificationDocuments: (documents: VerificationDocument[]) => Promise<{ error?: string }>;
   adminVerifyUser: (userId: string, status: VerificationStatus, reason?: string) => Promise<{ error?: string }>;
+  adminToggleSuspend: (userId: string, suspend: boolean) => Promise<{ error?: string }>;
   configureSupabase: (url: string, key: string) => void;
 }
 
@@ -62,7 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .single();
 
             if (prof && !error) {
-              setProfile(prof as Profile);
+              if (prof.is_suspended) {
+                // Compte suspendu entre-temps par le SuperAdmin : on force la déconnexion.
+                await supabase.auth.signOut();
+                setUser(null);
+                setProfile(null);
+              } else {
+                setProfile(prof as Profile);
+              }
             } else {
               // fallback profile from metadata
               const newProf: Profile = {
@@ -90,7 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
-              if (prof) setProfile(prof as Profile);
+              if (prof?.is_suspended) {
+                await supabase.auth.signOut();
+                setUser(null);
+                setProfile(null);
+              } else if (prof) {
+                setProfile(prof as Profile);
+              }
             } else {
               setUser(null);
               setProfile(null);
@@ -131,8 +145,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
       if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' });
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+
+        // Un compte suspendu par le SuperAdmin ne doit plus pouvoir accéder
+        // à l'application, même si son mot de passe est correct.
+        if (prof?.is_suspended) {
+          await supabase.auth.signOut();
+          return { error: "Ce compte a été suspendu par l'administration. Contactez le support pour plus d'informations." };
+        }
+
+        setUser({ id: data.user.id, email: data.user.email || '' });
         if (prof) setProfile(prof as Profile);
       }
       return {};
@@ -334,6 +356,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return {};
   };
 
+  const adminToggleSuspend = async (userId: string, suspend: boolean): Promise<{ error?: string }> => {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_suspended: suspend })
+        .eq('id', userId);
+      if (error) return { error: error.message };
+    }
+
+    const usersStr = localStorage.getItem('loyerpro_registered_users');
+    if (usersStr) {
+      try {
+        const users = JSON.parse(usersStr) as Array<{ id: string; email: string; password: string; profile: Profile }>;
+        const idx = users.findIndex(u => u.id === userId || u.profile.id === userId);
+        if (idx !== -1) {
+          users[idx].profile.is_suspended = suspend;
+          localStorage.setItem('loyerpro_registered_users', JSON.stringify(users));
+        }
+      } catch (e) {
+        console.error('Error updating local registered users:', e);
+      }
+    }
+
+    return {};
+  };
+
   const signOut = async () => {
     const supabase = getSupabase();
     if (supabase) {
@@ -387,6 +436,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     submitVerificationDocuments,
     adminVerifyUser,
+    adminToggleSuspend,
     configureSupabase,
   }), [user, profile, role, isSuperAdmin, isAgency, isVerified, verificationStatus, loading, isSupabaseConfigured]);
 
