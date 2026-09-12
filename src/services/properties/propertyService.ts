@@ -152,11 +152,21 @@ export const propertyService = {
   async getPropertyBySlug(slugOrId: string): Promise<Property | null> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
+      // La colonne "id" est un UUID côté base : si on envoie un slug (texte
+      // quelconque) dans une clause "id.eq.<slug>", Postgres essaie de le
+      // convertir en UUID et toute la requête échoue avec l'erreur 22P02
+      // ("invalid input syntax for type uuid"), même si c'est un OR avec
+      // "slug.eq.<slug>" à côté. On ne compare donc sur "id" que si la
+      // valeur ressemble réellement à un UUID.
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+
+      const query = supabase
         .from('properties')
-        .select('*, profiles:user_id(full_name, agency_name, phone, role, verification_status)')
-        .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
-        .maybeSingle();
+        .select('*, profiles:user_id(full_name, agency_name, phone, role, verification_status)');
+
+      const { data, error } = isUuid
+        ? await query.or(`slug.eq.${slugOrId},id.eq.${slugOrId}`).maybeSingle()
+        : await query.eq('slug', slugOrId).maybeSingle();
 
       if (error) {
         console.error('[propertyService] getPropertyBySlug error:', error.message);
