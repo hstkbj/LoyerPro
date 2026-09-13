@@ -30,7 +30,16 @@ export function LoginPage() {
     if (res.error) {
       setError(res.error);
     } else {
-      navigate('/dashboard');
+      // Si l'utilisateur avait choisi un forfait payant depuis /pricing
+      // avant de s'inscrire, on l'emmène directement finaliser le paiement
+      // au lieu de le laisser silencieusement en forfait gratuit.
+      const pendingPlan = localStorage.getItem('loyerpro_pending_plan');
+      if (pendingPlan) {
+        localStorage.removeItem('loyerpro_pending_plan');
+        navigate(`/dashboard/settings?tab=subscription&selectedPlan=${pendingPlan}`);
+      } else {
+        navigate('/dashboard');
+      }
     }
   };
 

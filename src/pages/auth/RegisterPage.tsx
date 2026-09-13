@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGeo } from '../../contexts/GeoContext';
 import { Input } from '../../components/ui/Input';
@@ -22,6 +22,15 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { currentCountry, availableCountries } = useGeo();
+  const [searchParams] = useSearchParams();
+
+  // Forfait choisi depuis la page tarifs (/pricing?plan=X) : on le conserve
+  // pour que l'utilisateur soit invité à payer juste après confirmation de
+  // son compte, au lieu de rester silencieusement en forfait gratuit.
+  const selectedPlan = searchParams.get('plan');
+  if (typeof window !== 'undefined' && selectedPlan) {
+    localStorage.setItem('loyerpro_pending_plan', selectedPlan);
+  }
 
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [role, setRole] = useState<UserRole>('owner');
@@ -115,6 +124,8 @@ export function RegisterPage() {
       setError(res.error);
     } else if (res.requiresEmailConfirmation) {
       setAwaitingConfirmation(true);
+    } else if (selectedPlan) {
+      navigate(`/dashboard/settings?tab=subscription&selectedPlan=${selectedPlan}`);
     } else {
       navigate('/dashboard');
     }
@@ -132,6 +143,12 @@ export function RegisterPage() {
             Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre
             compte, puis connectez-vous.
           </p>
+          {selectedPlan && (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
+              Une fois connecté(e), vous pourrez activer et régler le forfait que vous avez choisi depuis
+              Paramètres → Abonnement.
+            </p>
+          )}
           <p className="text-xs text-slate-400">
             Vous ne voyez rien ? Vérifiez vos courriers indésirables, ou patientez quelques minutes.
           </p>

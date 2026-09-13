@@ -111,7 +111,12 @@ export const subscriptionService = {
     return this.getUserSubscription(uid || 'local_user');
   },
 
-  async upgradeSubscription(planId: string, paymentMethod?: string, userId?: string): Promise<Subscription> {
+  async upgradeSubscription(
+    planId: string,
+    paymentMethod?: string,
+    userId?: string,
+    verifiedTransactionId?: string | number
+  ): Promise<Subscription> {
     let uid = userId;
     if (!uid) {
       const supabase = getSupabase();
@@ -120,7 +125,20 @@ export const subscriptionService = {
         uid = user?.id;
       }
     }
-    return this.createOrUpgradeSubscription(uid || 'local_user', planId, 'TX_FP_' + Date.now(), paymentMethod || 'FedaPay Mobile Money');
+    // IMPORTANT : verifiedTransactionId doit provenir d'une transaction déjà
+    // confirmée "approved" par /api/fedapay/verify-transaction/:id (voir
+    // fedapayCheckout.ts). On ne doit plus jamais fabriquer un faux
+    // identifiant ici : ça revenait à activer un abonnement payant sans
+    // paiement réel.
+    if (!verifiedTransactionId && planId !== 'free') {
+      throw new Error("Un identifiant de transaction FedaPay vérifié est requis pour activer un forfait payant.");
+    }
+    return this.createOrUpgradeSubscription(
+      uid || 'local_user',
+      planId,
+      verifiedTransactionId ? String(verifiedTransactionId) : undefined,
+      paymentMethod || 'FedaPay Mobile Money'
+    );
   },
 
   async getUserSubscription(userId: string): Promise<Subscription> {

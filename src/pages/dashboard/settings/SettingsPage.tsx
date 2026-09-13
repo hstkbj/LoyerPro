@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useGeo } from '../../../contexts/GeoContext';
 import { getPricingPlansList } from '../../../services/currency/currencyService';
-import type { VerificationDocument } from '../../../types';
+import { planService } from '../../../services/plans/planService';
+import { subscriptionService } from '../../../services/subscriptions/subscriptionService';
+import { openFedaPayCheckout, verifyFedaPayTransaction } from '../../../services/payments/fedapayCheckout';
+import type { VerificationDocument, SubscriptionPlan, Subscription } from '../../../types';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -31,6 +34,8 @@ export function SettingsPage() {
 
   const initialTab = (searchParams.get('tab') as 'profile' | 'verification' | 'subscription') || 'profile';
   const [activeTab, setActiveTab] = useState<'profile' | 'verification' | 'subscription'>(initialTab);
+  const selectedPlanFromUrl = searchParams.get('selectedPlan');
+  const [autoTriggered, setAutoTriggered] = useState(false);
 
   // Profile form state
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -48,7 +53,129 @@ export function SettingsPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
-  const plans = getPricingPlansList(currentCurrency);
+  // Abonnement : plans réels gérés par le SuperAdmin (/superadmin/plans) +
+  // abonnement réellement actif de l'utilisateur (plus de valeurs codées en dur).
+  const [dbPlans, setDbPlans] = useState<SubscriptionPlan[]>([]);
+  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
+  const [subLoading, setSubLoading] = useState(true);
+  const [payingPlanId, setPayingPlanId] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentNotice, setPaymentNotice] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubscriptionData() {
+      setSubLoading(true);
+      try {
+        const [plansRes, subRes] = await Promise.all([
+          planService.getAllPlans(false),
+          subscriptionService.getMySubscription(profile?.id),
+        ]);
+        if (!cancelled) {
+          setDbPlans(plansRes);
+          setCurrentSubscription(subRes);
+        }
+      } catch (err) {
+        console.error('Erreur de chargement des données d\'abonnement:', err);
+      } finally {
+        if (!cancelled) setSubLoading(false);
+      }
+    }
+    loadSubscriptionData();
+    return () => { cancelled = true; };
+  }, [profile?.id]);
+
+  const refreshSubscription = async () => {
+    try {
+      const sub = await subscriptionService.getMySubscription(profile?.id);
+      setCurrentSubscription(sub);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Si l'utilisateur arrive ici avec ?selectedPlan=X (venant de /pricing puis
+  // inscription/connexion), on lui propose immédiatement le paiement de ce
+  // forfait au lieu de le laisser chercher le bon bouton lui-même.
+  useEffect(() => {
+    if (
+      !autoTriggered &&
+      selectedPlanFromUrl &&
+      !subLoading &&
+      dbPlans.length > 0 &&
+      currentSubscription &&
+      currentSubscription.plan_id !== selectedPlanFromUrl
+    ) {
+      const rawPlan = dbPlans.find((p) => p.id === selectedPlanFromUrl);
+      if (rawPlan) {
+        setAutoTriggered(true);
+        handleChoosePlan(rawPlan);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlanFromUrl, subLoading, dbPlans, currentSubscription, autoTriggered]);
+
+  const handleChoosePlan = async (rawPlan: SubscriptionPlan) => {
+    setPaymentError('');
+    setPaymentNotice('');
+
+    // Forfait gratuit : pas de paiement, activation immédiate.
+    if (!rawPlan.price || rawPlan.price === 0) {
+      setPayingPlanId(rawPlan.id);
+      try {
+        await subscriptionService.upgradeSubscription(rawPlan.id, 'Gratuit', profile?.id);
+        await refreshSubscription();
+      } catch (err: any) {
+        setPaymentError(err?.message || 'Erreur lors du passage au forfait gratuit.');
+      } finally {
+        setPayingPlanId(null);
+      }
+      return;
+    }
+
+    // Forfait payant : on ouvre le vrai module de paiement FedaPay.
+    setPayingPlanId(rawPlan.id);
+    openFedaPayCheckout({
+      amount: rawPlan.price,
+      currency: rawPlan.currency || 'XOF',
+      description: `Abonnement LoyerPro — ${rawPlan.name}`,
+      customerEmail: profile?.email,
+      customerFirstname: profile?.full_name?.split(' ')[0],
+      customerLastname: profile?.full_name?.split(' ').slice(1).join(' ') || profile?.full_name,
+      customerPhone: profile?.phone,
+      onApproved: async (transactionId) => {
+        setPaymentNotice('Vérification du paiement en cours...');
+        const verification = await verifyFedaPayTransaction(transactionId);
+        if (!verification.approved) {
+          setPayingPlanId(null);
+          setPaymentNotice('');
+          setPaymentError(
+            verification.error ||
+              "Le paiement n'a pas pu être confirmé. Si un montant a été débité, contactez le support avec votre référence de transaction."
+          );
+          return;
+        }
+        try {
+          await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, transactionId);
+          await refreshSubscription();
+          setPaymentNotice(`Forfait ${rawPlan.name} activé avec succès !`);
+        } catch (err: any) {
+          setPaymentError(err?.message || "Le paiement a été confirmé mais l'activation de l'abonnement a échoué. Contactez le support.");
+        } finally {
+          setPayingPlanId(null);
+        }
+      },
+      onDismissed: () => {
+        setPayingPlanId(null);
+      },
+      onError: (message) => {
+        setPayingPlanId(null);
+        setPaymentError(message);
+      },
+    });
+  };
+
+  const plans = getPricingPlansList(currentCurrency, dbPlans.length > 0 ? dbPlans : undefined);
   const verificationStatus = profile?.verification_status || 'unverified';
   const existingDocs = profile?.verification_documents || [];
 
@@ -475,12 +602,16 @@ export function SettingsPage() {
               </span>
               <div className="flex items-center gap-2 mt-1">
                 <h2 className="text-lg font-bold text-slate-900">
-                  Forfait Standard LoyerPro
+                  {subLoading ? 'Chargement...' : currentSubscription?.plan?.name || 'Forfait Gratuit'}
                 </h2>
-                <Badge variant="success">Actif</Badge>
+                {!subLoading && (
+                  <Badge variant={currentSubscription?.status === 'active' ? 'success' : 'default'}>
+                    {currentSubscription?.status === 'active' ? 'Actif' : currentSubscription?.status || 'Actif'}
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Devise paramétrée : {currentCurrency} • Facturation sécurisée
+                Devise paramétrée : {currentCurrency} • Facturation sécurisée par FedaPay
               </p>
             </div>
 
@@ -490,24 +621,45 @@ export function SettingsPage() {
             </div>
           </div>
 
+          {paymentError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{paymentError}</span>
+            </div>
+          )}
+          {paymentNotice && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs p-3 flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{paymentNotice}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((p) => {
               const isRecommended = p.highlight;
+              const rawPlan = dbPlans.find((dp) => dp.id === p.id);
+              const isCurrentPlan = currentSubscription?.plan_id === p.id;
+              const isPaying = payingPlanId === p.id;
+
               return (
                 <div
                   key={p.id}
                   className={`rounded-2xl border p-6 bg-white space-y-4 flex flex-col justify-between ${
                     isRecommended ? 'border-slate-900 ring-2 ring-slate-900 shadow-md' : 'border-slate-200'
-                  }`}
+                  } ${isCurrentPlan ? 'ring-2 ring-emerald-500' : ''}`}
                 >
                   <div>
                     <div className="flex justify-between items-start">
                       <h3 className="font-extrabold text-slate-900 text-sm">{p.name}</h3>
-                      {isRecommended && (
+                      {isCurrentPlan ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          Votre forfait
+                        </span>
+                      ) : isRecommended ? (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
                           Recommandé
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     <div className="mt-2 text-2xl font-black text-slate-900">
                       {p.formattedPrice}
@@ -529,13 +681,20 @@ export function SettingsPage() {
                     variant={isRecommended ? 'primary' : 'outline'}
                     size="sm"
                     className="w-full font-bold text-xs"
+                    disabled={isCurrentPlan || isPaying || !rawPlan}
+                    isLoading={isPaying}
+                    onClick={() => rawPlan && handleChoosePlan(rawPlan)}
                   >
-                    {p.price === 0 ? 'Forfait Actif' : `Choisir ${p.name}`}
+                    {isCurrentPlan ? 'Forfait Actif' : p.price === 0 ? 'Passer au Gratuit' : `Choisir ${p.name}`}
                   </Button>
                 </div>
               );
             })}
           </div>
+
+          <p className="text-[11px] text-slate-400 text-center">
+            Paiement sécurisé par FedaPay. En cas de souci de paiement, contactez le support avec la référence de transaction affichée après le paiement.
+          </p>
         </div>
       )}
     </div>
