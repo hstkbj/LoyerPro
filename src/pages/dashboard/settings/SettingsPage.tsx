@@ -103,8 +103,7 @@ export function SettingsPage() {
       selectedPlanFromUrl &&
       !subLoading &&
       dbPlans.length > 0 &&
-      currentSubscription &&
-      currentSubscription.plan_id !== selectedPlanFromUrl
+      (!currentSubscription || currentSubscription.plan_id !== selectedPlanFromUrl)
     ) {
       const rawPlan = dbPlans.find((p) => p.id === selectedPlanFromUrl);
       if (rawPlan) {
@@ -595,6 +594,19 @@ export function SettingsPage() {
       {/* Subscription Tab */}
       {activeTab === 'subscription' && (
         <div className="space-y-6">
+          {!subLoading && !currentSubscription && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Choisissez un forfait pour continuer</p>
+                <p className="text-xs mt-0.5">
+                  Le reste du tableau de bord (biens, locataires, contrats...) reste inaccessible tant que vous
+                  n'avez pas activé un forfait ci-dessous — même le forfait gratuit, en un clic.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -602,12 +614,15 @@ export function SettingsPage() {
               </span>
               <div className="flex items-center gap-2 mt-1">
                 <h2 className="text-lg font-bold text-slate-900">
-                  {subLoading ? 'Chargement...' : currentSubscription?.plan?.name || 'Forfait Gratuit'}
+                  {subLoading ? 'Chargement...' : currentSubscription?.plan?.name || 'Aucun forfait actif'}
                 </h2>
-                {!subLoading && (
+                {!subLoading && currentSubscription && (
                   <Badge variant={currentSubscription?.status === 'active' ? 'success' : 'default'}>
                     {currentSubscription?.status === 'active' ? 'Actif' : currentSubscription?.status || 'Actif'}
                   </Badge>
+                )}
+                {!subLoading && !currentSubscription && (
+                  <Badge variant="warning">En attente de choix</Badge>
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-1">

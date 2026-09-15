@@ -43,10 +43,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check Supabase configuration and initial session
   useEffect(() => {
+    // IMPORTANT : ce useEffect ne doit s'exécuter qu'UNE SEULE FOIS au montage.
+    // Bug corrigé ici : il dépendait auparavant de `isSupabaseConfigured`,
+    // qu'il modifiait lui-même via setIsSupabaseConfigured() — ce qui le
+    // redéclenchait en boucle, créant à chaque fois un nouvel écouteur
+    // onAuthStateChange jamais nettoyé (voir plus bas). Ces écouteurs
+    // s'accumulaient et chacun refaisait ses propres requêtes Supabase en
+    // parallèle, provoquant la tempête de requêtes identiques et les erreurs
+    // ERR_CONNECTION_RESET / ERR_HTTP2_PROTOCOL_ERROR observées.
+    let unsubscribeAuthListener: (() => void) | undefined;
+    let isMounted = true;
+
     async function initAuth() {
       setLoading(true);
       const config = getSupabaseConfig();
-      setIsSupabaseConfigured(config.isConfigured);
+      if (isMounted) setIsSupabaseConfigured(config.isConfigured);
 
       const supabase = getSupabase();
 
@@ -89,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(null);
           }
 
-          // Listener
+          // Listener — un SEUL, car ce useEffect ne s'exécute plus qu'une fois.
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
               setUser({ id: session.user.id, email: session.user.email || '' });
@@ -111,10 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
 
+          unsubscribeAuthListener = () => subscription.unsubscribe();
           setLoading(false);
-          return () => {
-            subscription.unsubscribe();
-          };
         } catch (err) {
           console.error('Supabase Auth init error:', err);
           setLoading(false);
@@ -137,7 +146,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     initAuth();
-  }, [isSupabaseConfigured]);
+
+    // Nettoyage RÉELLEMENT exécuté par React cette fois : plus de fuite
+    // d'écouteur, donc plus de requêtes dupliquées qui s'accumulent.
+    return () => {
+      isMounted = false;
+      unsubscribeAuthListener?.();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
     const supabase = getSupabase();

@@ -99,15 +99,22 @@ export const subscriptionService = {
     return DEFAULT_PLANS;
   },
 
-  async getMySubscription(userId?: string): Promise<Subscription> {
+  async getMySubscription(userId?: string): Promise<Subscription | null> {
+    const supabase = getSupabase();
     let uid = userId;
-    if (!uid) {
-      const supabase = getSupabase();
-      if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id;
-      }
+    if (!uid && supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      uid = user?.id;
     }
+
+    // Si Supabase est configuré mais qu'on n'a aucun utilisateur réel
+    // (session absente/expirée), il ne faut PAS interroger la vraie base
+    // avec un identifiant fictif ('local_user') : ça ne trouvera jamais
+    // rien et ça masque le vrai problème (utilisateur non connecté).
+    if (supabase && !uid) {
+      return null;
+    }
+
     return this.getUserSubscription(uid || 'local_user');
   },
 
@@ -141,7 +148,7 @@ export const subscriptionService = {
     );
   },
 
-  async getUserSubscription(userId: string): Promise<Subscription> {
+  async getUserSubscription(userId: string): Promise<Subscription | null> {
     const supabase = getSupabase();
     if (supabase) {
       const { data, error } = await supabase
@@ -152,31 +159,26 @@ export const subscriptionService = {
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) {
-        return data as Subscription;
+      if (error) {
+        console.error('[subscriptionService] getUserSubscription error:', error.message);
       }
+      // Supabase configuré : on renvoie la vraie réalité, y compris "aucun
+      // abonnement" (null) si l'utilisateur n'en a encore choisi aucun. On
+      // ne fabrique PLUS un faux forfait gratuit par défaut ici : ça
+      // empêchait de savoir si l'utilisateur avait vraiment sélectionné un
+      // forfait, et cassait le blocage d'accès tant qu'aucun forfait n'est
+      // choisi.
+      return (data as Subscription) || null;
     }
 
+    // Supabase non configuré : mode démo hors-ligne uniquement.
     const items = getLocalSubs().filter(s => s.user_id === userId);
     if (items.length > 0) {
       const sub = items[0];
       const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
       return { ...sub, plan };
     }
-
-    // Default free plan for active account
-    const defaultSub: Subscription = {
-      id: 'sub_default_' + userId,
-      user_id: userId,
-      plan_id: 'free',
-      status: 'active',
-      start_date: new Date().toISOString(),
-      amount: 0,
-      payment_gateway: 'system',
-      plan: DEFAULT_PLANS[0],
-      created_at: new Date().toISOString(),
-    };
-    return defaultSub;
+    return null;
   },
 
   async createOrUpgradeSubscription(

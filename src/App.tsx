@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GeoProvider } from './contexts/GeoContext';
 import { trackPageView } from './lib/gtag';
+import { subscriptionService } from './services/subscriptions/subscriptionService';
 
 // Layouts
 import { PublicNavbar } from './components/layout/PublicNavbar';
@@ -71,8 +72,34 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 // Protected Route wrapper for Owner/Dashboard
 function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
   const { user, isSuperAdmin, loading, isSupabaseConfigured } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  // Tant que l'utilisateur n'a pas explicitement choisi un forfait (même
+  // gratuit) depuis Paramètres > Abonnement, on bloque l'accès au reste du
+  // tableau de bord et on l'y redirige. La page Paramètres elle-même reste
+  // toujours accessible, sinon personne ne pourrait jamais choisir de plan.
+  const [subCheckDone, setSubCheckDone] = useState(false);
+  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isSupabaseConfigured || !user || isSuperAdmin) {
+      setSubCheckDone(true);
+      return;
+    }
+    setSubCheckDone(false);
+    subscriptionService.getMySubscription(user.id).then((sub) => {
+      if (!cancelled) {
+        setHasPlan(Boolean(sub));
+        setSubCheckDone(true);
+      }
+    }).catch(() => {
+      if (!cancelled) setSubCheckDone(true); // en cas d'erreur réseau, on ne bloque pas indéfiniment
+    });
+    return () => { cancelled = true; };
+  }, [user?.id, isSuperAdmin, isSupabaseConfigured]);
+
+  if (loading || !subCheckDone) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-xs text-slate-500 font-medium">Chargement de votre session...</div>
@@ -89,6 +116,11 @@ function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
   // Le superadmin garde son propre espace dédié
   if (isSuperAdmin) {
     return <Navigate to="/superadmin/dashboard" replace />;
+  }
+
+  const isSettingsPage = location.pathname.startsWith('/dashboard/settings');
+  if (isSupabaseConfigured && hasPlan === false && !isSettingsPage) {
+    return <Navigate to="/dashboard/settings?tab=subscription" replace />;
   }
 
   return <OwnerLayout>{children}</OwnerLayout>;
