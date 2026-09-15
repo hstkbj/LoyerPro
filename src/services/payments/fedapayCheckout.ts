@@ -82,9 +82,23 @@ export function openFedaPayCheckout(opts: FedaPayCheckoutOptions): void {
       },
       onComplete: (resp: any) => {
         cleanup();
-        if (resp.reason === FedaPay.DIALOG_DISMISSED) {
+        // BUG CORRIGÉ : la vraie constante FedaPay s'appelle
+        // "CHECKOUT_COMPLETED" (avec un D final), pas "CHECKOUT_COMPLETE".
+        // Comme cette dernière n'existe pas sur l'objet FedaPay (donc vaut
+        // "undefined"), la comparaison échouait TOUJOURS — même quand le
+        // paiement avait réellement réussi — et affichait à tort "le
+        // paiement n'a pas abouti". On vérifie aussi en secours le statut
+        // réel de la transaction, pour ne plus jamais dépendre d'une seule
+        // constante du SDK.
+        const isDismissed = resp.reason === FedaPay.DIALOG_DISMISSED;
+        const isCompleted =
+          resp.reason === FedaPay.CHECKOUT_COMPLETED ||
+          resp.transaction?.status === 'approved' ||
+          resp.transaction?.status === 'pending'; // 'pending' possible sur certains Mobile Money : on vérifie ensuite côté serveur
+
+        if (isDismissed) {
           opts.onDismissed?.();
-        } else if (resp.reason === FedaPay.CHECKOUT_COMPLETE && resp.transaction?.id) {
+        } else if (isCompleted && resp.transaction?.id) {
           opts.onApproved(resp.transaction.id);
         } else {
           opts.onError?.('Le paiement n\'a pas abouti. Aucun montant n\'a été débité.');
