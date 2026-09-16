@@ -1,5 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+function sanitizeUrl(val: string): string {
+  return (val || '').trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+}
+
+function sanitizeKey(val: string): string {
+  return (val || '').trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '');
+}
+
 // Retrieve keys from environment or localStorage for user convenience
 export function getSupabaseConfig(): { url: string; anonKey: string; isConfigured: boolean } {
   const env = (import.meta as any).env || {};
@@ -9,8 +17,8 @@ export function getSupabaseConfig(): { url: string; anonKey: string; isConfigure
   const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('loyerpro_supabase_url') || '' : '';
   const storedKey = typeof window !== 'undefined' ? localStorage.getItem('loyerpro_supabase_key') || '' : '';
 
-  const url = (storedUrl || envUrl).trim();
-  const anonKey = (storedKey || envKey).trim();
+  const url = sanitizeUrl(storedUrl || envUrl);
+  const anonKey = sanitizeKey(storedKey || envKey);
 
   const isConfigured = Boolean(
     url && 
@@ -42,8 +50,10 @@ export function getSupabase(): SupabaseClient | null {
 
 export function setCustomSupabaseConfig(url: string, key: string) {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('loyerpro_supabase_url', url.trim());
-    localStorage.setItem('loyerpro_supabase_key', key.trim());
+    const cleanU = sanitizeUrl(url);
+    const cleanK = sanitizeKey(key);
+    localStorage.setItem('loyerpro_supabase_url', cleanU);
+    localStorage.setItem('loyerpro_supabase_key', cleanK);
     supabaseInstance = null; // reset client
   }
 }
@@ -52,6 +62,16 @@ export function clearCustomSupabaseConfig() {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('loyerpro_supabase_url');
     localStorage.removeItem('loyerpro_supabase_key');
+    // Supprimer d'éventuels tokens d'auth Supabase orphelins dans localStorage
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch {
+      // ignore
+    }
     supabaseInstance = null;
   }
 }

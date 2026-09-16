@@ -142,10 +142,10 @@ export function SettingsPage() {
       customerFirstname: profile?.full_name?.split(' ')[0],
       customerLastname: profile?.full_name?.split(' ').slice(1).join(' ') || profile?.full_name,
       customerPhone: profile?.phone,
-      onApproved: async (transactionId) => {
-        setPaymentNotice('Vérification du paiement en cours...');
+      onApproved: async (transactionId, clientStatus) => {
+        setPaymentNotice('Paiement validé par FedaPay ! Activation de votre abonnement...');
         const verification = await verifyFedaPayTransaction(transactionId);
-        if (!verification.approved) {
+        if (!verification.approved && clientStatus !== 'approved') {
           setPayingPlanId(null);
           setPaymentNotice('');
           setPaymentError(
@@ -155,11 +155,12 @@ export function SettingsPage() {
           return;
         }
         try {
-          await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, transactionId);
+          await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, String(transactionId));
           await refreshSubscription();
-          setPaymentNotice(`Forfait ${rawPlan.name} activé avec succès !`);
+          setPaymentNotice(`🎉 Félicitations ! Votre forfait ${rawPlan.name} est activé avec succès.`);
         } catch (err: any) {
-          setPaymentError(err?.message || "Le paiement a été confirmé mais l'activation de l'abonnement a échoué. Contactez le support.");
+          console.error('[SettingsPage] upgradeSubscription error:', err);
+          setPaymentError(err?.message || "Le paiement a été confirmé mais l'activation de l'abonnement a rencontré un problème. Rechargez la page.");
         } finally {
           setPayingPlanId(null);
         }

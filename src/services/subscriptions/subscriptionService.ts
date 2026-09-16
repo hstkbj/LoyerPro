@@ -83,6 +83,8 @@ function saveLocalTx(items: Transaction[]) {
   }
 }
 
+const inFlightUserSubs = new Map<string, Promise<Subscription | null>>();
+
 export const subscriptionService = {
   async getPlans(): Promise<SubscriptionPlan[]> {
     const supabase = getSupabase();
@@ -167,19 +169,35 @@ export const subscriptionService = {
   },
 
   async getUserSubscription(userId: string): Promise<Subscription | null> {
-    const supabase = getSupabase();
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .select('*, plan:plan_id(*)')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+    if (inFlightUserSubs.has(userId)) {
+      return inFlightUserSubs.get(userId)!;
+    }
 
-        if (error) {
-          console.warn('[subscriptionService] getUserSubscription notice:', error.message);
+    const fetchPromise = (async () => {
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('subscriptions')
+            .select('*, plan:plan_id(*)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (error) {
+            console.warn('[subscriptionService] getUserSubscription notice:', error.message);
+            const localItems = getLocalSubs().filter(s => s.user_id === userId);
+            if (localItems.length > 0) {
+              const sub = localItems[0];
+              const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+              return { ...sub, plan };
+            }
+            return null;
+          }
+          return (data as Subscription) || null;
+        } catch (err: any) {
+          console.warn('[subscriptionService] getUserSubscription network notice:', err?.message);
           const localItems = getLocalSubs().filter(s => s.user_id === userId);
           if (localItems.length > 0) {
             const sub = localItems[0];
@@ -188,27 +206,22 @@ export const subscriptionService = {
           }
           return null;
         }
-        return (data as Subscription) || null;
-      } catch (err: any) {
-        console.warn('[subscriptionService] getUserSubscription network notice:', err?.message);
-        const localItems = getLocalSubs().filter(s => s.user_id === userId);
-        if (localItems.length > 0) {
-          const sub = localItems[0];
-          const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
-          return { ...sub, plan };
-        }
-        return null;
       }
-    }
 
-    // Supabase non configuré : mode démo hors-ligne uniquement.
-    const items = getLocalSubs().filter(s => s.user_id === userId);
-    if (items.length > 0) {
-      const sub = items[0];
-      const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
-      return { ...sub, plan };
-    }
-    return null;
+      // Supabase non configuré : mode démo hors-ligne uniquement.
+      const items = getLocalSubs().filter(s => s.user_id === userId);
+      if (items.length > 0) {
+        const sub = items[0];
+        const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+        return { ...sub, plan };
+      }
+      return null;
+    })().finally(() => {
+      setTimeout(() => inFlightUserSubs.delete(userId), 2000);
+    });
+
+    inFlightUserSubs.set(userId, fetchPromise);
+    return fetchPromise;
   },
 
   async createOrUpgradeSubscription(

@@ -67,56 +67,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             setUser({ id: session.user.id, email: session.user.email || '' });
             // Fetch profile
-            const { data: prof, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+            try {
+              const { data: prof, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
-            if (prof && !error) {
-              if (prof.is_suspended) {
-                // Compte suspendu entre-temps par le SuperAdmin : on force la déconnexion.
-                await supabase.auth.signOut();
-                setUser(null);
-                setProfile(null);
-              } else {
-                setProfile(prof as Profile);
+              if (prof && !error) {
+                if (prof.is_suspended) {
+                  // Compte suspendu entre-temps par le SuperAdmin : on force la déconnexion.
+                  await supabase.auth.signOut();
+                  if (isMounted) {
+                    setUser(null);
+                    setProfile(null);
+                  }
+                } else if (isMounted) {
+                  setProfile(prof as Profile);
+                }
+              } else if (isMounted) {
+                // fallback profile from metadata
+                const newProf: Profile = {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                  phone: session.user.user_metadata?.phone || '',
+                  role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                  agency_name: session.user.user_metadata?.agency_name,
+                  city: session.user.user_metadata?.city || 'Cotonou',
+                };
+                setProfile(newProf);
               }
-            } else {
-              // fallback profile from metadata
-              const newProf: Profile = {
-                id: session.user.id,
-                email: session.user.email || '',
-                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
-                phone: session.user.user_metadata?.phone || '',
-                role: (session.user.user_metadata?.role as UserRole) || 'owner',
-                agency_name: session.user.user_metadata?.agency_name,
-                city: session.user.user_metadata?.city || 'Cotonou',
-              };
-              setProfile(newProf);
+            } catch (err) {
+              console.warn('[AuthContext] Impossible de joindre profiles, profil de secours activé:', err);
+              if (isMounted) {
+                setProfile({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                  phone: session.user.user_metadata?.phone || '',
+                  role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                  agency_name: session.user.user_metadata?.agency_name,
+                  city: session.user.user_metadata?.city || 'Cotonou',
+                });
+              }
             }
-          } else {
+          } else if (isMounted) {
             setUser(null);
             setProfile(null);
           }
 
           // Listener — un SEUL, car ce useEffect ne s'exécute plus qu'une fois.
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (!isMounted) return;
             if (session?.user) {
               setUser({ id: session.user.id, email: session.user.email || '' });
-              const { data: prof } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              if (prof?.is_suspended) {
-                await supabase.auth.signOut();
-                setUser(null);
-                setProfile(null);
-              } else if (prof) {
-                setProfile(prof as Profile);
+              try {
+                const { data: prof, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
+                if (prof?.is_suspended) {
+                  await supabase.auth.signOut();
+                  if (isMounted) {
+                    setUser(null);
+                    setProfile(null);
+                  }
+                } else if (prof && !error) {
+                  if (isMounted) setProfile(prof as Profile);
+                } else if (isMounted) {
+                  setProfile({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                    phone: session.user.user_metadata?.phone || '',
+                    role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                    agency_name: session.user.user_metadata?.agency_name,
+                    city: session.user.user_metadata?.city || 'Cotonou',
+                  });
+                }
+              } catch (err) {
+                if (isMounted) {
+                  setProfile({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                    phone: session.user.user_metadata?.phone || '',
+                    role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                    agency_name: session.user.user_metadata?.agency_name,
+                    city: session.user.user_metadata?.city || 'Cotonou',
+                  });
+                }
               }
-            } else {
+            } else if (isMounted) {
               setUser(null);
               setProfile(null);
             }

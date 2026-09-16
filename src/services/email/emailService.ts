@@ -23,18 +23,38 @@ interface SendEmailResult {
 async function sendEmail(to: string | undefined | null, template: EmailTemplate, params: Record<string, any>): Promise<SendEmailResult> {
   if (!to) return { sent: false, error: 'Destinataire manquant' };
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     const res = await fetch('/api/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, template, params }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await res.text();
+      return {
+        sent: false,
+        simulated: true,
+        notice: `Le serveur d'email a répondu en mode texte/HTML (HTTP ${res.status}). Envoi simulé.`,
+        error: res.ok ? undefined : `HTTP ${res.status}: ${text.slice(0, 120)}`,
+      };
+    }
+
     const data = await res.json();
     if (!res.ok) return { sent: false, error: data?.error || 'Erreur inconnue' };
     return data as SendEmailResult;
   } catch (err: any) {
     // Ne jamais bloquer un flux métier (inscription, paiement...) si l'email échoue
-    console.error('emailService.sendEmail error:', err);
-    return { sent: false, error: err.message };
+    const msg = err?.name === 'AbortError'
+      ? "Délai d'attente dépassé (6s) pour l'API d'email"
+      : err?.message || 'Erreur réseau';
+    console.warn('[emailService] Notice envoi email:', msg);
+    return { sent: false, simulated: true, error: msg };
   }
 }
 
