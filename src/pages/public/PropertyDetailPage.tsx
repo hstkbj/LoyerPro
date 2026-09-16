@@ -83,7 +83,7 @@ export function PropertyDetailPage() {
   const currentPhoto = photos.length > 0 ? photos[selectedPhotoIndex] : null;
 
   const handleShareWhatsApp = () => {
-    const text = `Découvrez cette annonce : ${property.title} (${property.city}) pour ${formatPrice(property.price, property.currency)}/mois sur LoyerPro : ${window.location.href}`;
+    const text = `Découvrez cette annonce : ${property.title} (${property.city}) pour ${formatPrice(property.price, property.currency)}/mois sur LoyerPro : https://loyerpro.vercel.app/`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

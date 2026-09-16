@@ -21,7 +21,7 @@ export function ResetPasswordPage() {
     const supabase = getSupabase();
     if (supabase) {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/login`,
+        redirectTo: `https://loyerpro.vercel.app/auth/login`,
       });
       if (error) {
         setError(error.message);
