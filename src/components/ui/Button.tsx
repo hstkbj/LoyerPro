@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'outline-white' | 'ghost' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'outline-white' | 'white' | 'ghost' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -13,9 +13,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     const variants = {
       primary: 'bg-slate-900 text-white hover:bg-slate-800 shadow-xs border border-transparent',
-      secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200',
-      outline: 'border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 hover:text-slate-900 shadow-xs',
-      'outline-white': 'border border-slate-700 text-white bg-slate-800/90 hover:bg-slate-700 hover:text-white shadow-xs',
+      secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-200',
+      outline: 'border border-slate-300 text-slate-800 bg-white hover:bg-slate-50 hover:text-slate-900 shadow-xs',
+      'outline-white': 'border border-slate-600 text-white bg-slate-800 hover:bg-slate-700 hover:text-white shadow-xs',
+      white: 'bg-white text-slate-900 hover:bg-slate-100 border border-slate-200 shadow-xs font-semibold',
       ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent',
       danger: 'bg-rose-600 text-white hover:bg-rose-700 shadow-xs border border-transparent',
       success: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs border border-transparent',

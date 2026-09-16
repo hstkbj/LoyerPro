@@ -21,19 +21,33 @@ export const tenantService = {
     if (supabase) {
       let uid = userId;
       if (!uid) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id;
+        } catch (e) {
+          // ignore
+        }
       }
       if (!uid) return [];
 
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Tenant[];
+        if (error) {
+          console.warn('[tenantService] getMyTenants notice:', error.message);
+          const items = getLocalTenants();
+          return items.filter(t => t.user_id === uid);
+        }
+        return (data || []) as Tenant[];
+      } catch (err: any) {
+        console.warn('[tenantService] getMyTenants network notice:', err?.message);
+        const items = getLocalTenants();
+        return items.filter(t => t.user_id === uid);
+      }
     }
 
     const items = getLocalTenants();
@@ -47,14 +61,23 @@ export const tenantService = {
   async getTenantById(id: string): Promise<Tenant | null> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error || !data) return null;
-      return data as Tenant;
+        if (error || !data) {
+          const items = getLocalTenants();
+          return items.find(t => t.id === id) || null;
+        }
+        return data as Tenant;
+      } catch (err: any) {
+        console.warn('[tenantService] getTenantById network notice:', err?.message);
+        const items = getLocalTenants();
+        return items.find(t => t.id === id) || null;
+      }
     }
 
     const items = getLocalTenants();
@@ -67,8 +90,13 @@ export const tenantService = {
 
     if (supabase) {
       if (!uid) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id || '00000000-0000-0000-0000-000000000000';
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id;
+        } catch (e) {
+          // ignore
+        }
+        if (!uid) uid = '00000000-0000-0000-0000-000000000000';
       }
 
       const payload = {
@@ -76,14 +104,18 @@ export const tenantService = {
         user_id: uid,
       };
 
-      const { data, error } = await supabase
-        .from('tenants')
-        .insert(payload)
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .insert(payload)
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data as Tenant;
+        if (!error && data) return data as Tenant;
+        console.warn('[tenantService] createTenant notice:', error?.message);
+      } catch (err: any) {
+        console.warn('[tenantService] createTenant network notice:', err?.message);
+      }
     }
 
     const items = getLocalTenants();

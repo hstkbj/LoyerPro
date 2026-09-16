@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGeo } from '../../contexts/GeoContext';
@@ -28,9 +28,12 @@ export function RegisterPage() {
   // pour que l'utilisateur soit invité à payer juste après confirmation de
   // son compte, au lieu de rester silencieusement en forfait gratuit.
   const selectedPlan = searchParams.get('plan');
-  if (typeof window !== 'undefined' && selectedPlan) {
-    localStorage.setItem('loyerpro_pending_plan', selectedPlan);
-  }
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && selectedPlan) {
+      localStorage.setItem('loyerpro_pending_plan', selectedPlan);
+    }
+  }, [selectedPlan]);
 
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [role, setRole] = useState<UserRole>('owner');

@@ -32,25 +32,49 @@ export interface FedaPayCheckoutOptions {
   onError?: (message: string) => void;
 }
 
+export async function ensureFedaPayScriptLoaded(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if ((window as any).FedaPay) return true;
+
+  return new Promise((resolve) => {
+    const existing = document.querySelector('script[src*="fedapay.com/checkout.js"]');
+    if (existing) {
+      if ((window as any).FedaPay) return resolve(true);
+      existing.addEventListener('load', () => resolve(Boolean((window as any).FedaPay)));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.fedapay.com/checkout.js?v=1.1.7';
+    script.async = true;
+    script.onload = () => resolve(Boolean((window as any).FedaPay));
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
 export function isFedaPayReady(): boolean {
-  return typeof window !== 'undefined' && Boolean((window as any).FedaPay) && Boolean(
+  return typeof window !== 'undefined' && Boolean(
     (import.meta as any).env?.VITE_FEDAPAY_PUBLIC_KEY
   );
 }
 
-export function openFedaPayCheckout(opts: FedaPayCheckoutOptions): void {
-  const FedaPay = (window as any).FedaPay;
+export async function openFedaPayCheckout(opts: FedaPayCheckoutOptions): Promise<void> {
   const publicKey = (import.meta as any).env?.VITE_FEDAPAY_PUBLIC_KEY;
 
-  if (!FedaPay) {
-    opts.onError?.(
-      "Le module de paiement FedaPay n'a pas pu se charger (connexion internet, bloqueur de publicité, ou script non installé)."
-    );
-    return;
-  }
   if (!publicKey) {
     opts.onError?.(
       "Le paiement en ligne n'est pas encore configuré sur ce site (VITE_FEDAPAY_PUBLIC_KEY manquante). Contactez l'administrateur."
+    );
+    return;
+  }
+
+  const loaded = await ensureFedaPayScriptLoaded();
+  const FedaPay = (window as any).FedaPay;
+
+  if (!loaded || !FedaPay) {
+    opts.onError?.(
+      "Le module de paiement FedaPay n'a pas pu se charger (connexion internet ou bloqueur de publicité). Veuillez réessayer."
     );
     return;
   }

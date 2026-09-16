@@ -56,10 +56,9 @@ export function ContactPage() {
       {/* 1. Hero Header */}
       <section className="bg-slate-900 text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
         <div className="mx-auto max-w-4xl text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
-            <MessageSquare className="h-4 w-4" />
-            Support & Accompagnement Dédié
-          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+            Assistance & Support Client
+          </p>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
             Comment pouvons-nous vous aider ?
           </h1>
@@ -80,8 +79,8 @@ export function ContactPage() {
                 <MessageSquare className="h-5 w-5" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                  Canal Prioritaire
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  Messagerie Directe
                 </span>
                 <h3 className="text-lg font-bold text-slate-900 mt-0.5">Assistance WhatsApp</h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">

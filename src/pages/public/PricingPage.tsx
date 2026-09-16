@@ -72,64 +72,62 @@ export function PricingPage() {
         {plans.map((plan) => {
           const isPro = plan.highlight;
           return (
-            <div
-              key={plan.id}
-              className={`flex flex-col justify-between rounded-3xl p-6 sm:p-8 bg-white border transition-all ${
-                isPro
-                  ? 'border-slate-900 shadow-xl ring-2 ring-slate-900 relative'
-                  : 'border-slate-200 shadow-xs hover:border-slate-300'
-              }`}
-            >
-              {isPro && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
-                  Formule Recommandée
-                </span>
-              )}
-
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">{plan.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 min-h-[32px] leading-relaxed">{plan.description}</p>
-                </div>
-
-                <div className="pt-2 pb-5 border-b border-slate-100">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900">
-                      {plan.formattedPrice}
-                    </span>
-                    {plan.price > 0 && (
-                      <span className="text-xs text-slate-500 font-medium">/ {plan.period}</span>
-                    )}
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mt-2 border border-emerald-200">
-                    Capacité : {plan.max_properties > 1000 ? 'Biens & Chambres illimités' : `Jusqu'à ${plan.max_properties} logements`}
+              <div
+                key={plan.id}
+                className={`flex flex-col justify-between rounded-2xl p-6 sm:p-8 bg-white border transition-all ${
+                  isPro
+                    ? 'border-slate-900 shadow-md ring-2 ring-slate-900 relative'
+                    : 'border-slate-200 shadow-xs hover:border-slate-300'
+                }`}
+              >
+                {isPro && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-3.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                    Recommandé
                   </span>
+                )}
+
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-slate-900">{plan.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1 min-h-[32px] leading-relaxed">{plan.description}</p>
+                  </div>
+
+                  <div className="pt-2 pb-5 border-b border-slate-100">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl sm:text-4xl font-black text-slate-900">
+                        {plan.formattedPrice}
+                      </span>
+                      {plan.price > 0 && (
+                        <span className="text-xs text-slate-500 font-medium">/ {plan.period}</span>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md inline-block mt-2">
+                      Capacité : {plan.max_properties > 1000 ? 'Biens & Chambres illimités' : `Jusqu'à ${plan.max_properties} logements`}
+                    </span>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-3 text-xs text-slate-600">
+                    {plan.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-3 text-xs text-slate-600">
-                  {plan.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5">
-                      <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="pt-8">
+                  <Button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    variant={isPro ? 'primary' : 'outline'}
+                    size="lg"
+                    className="w-full font-bold text-xs"
+                  >
+                    {plan.price === 0 ? 'Commencer Gratuitement' : `Choisir ${plan.name}`}
+                  </Button>
+                </div>
               </div>
-
-              <div className="pt-8">
-                <Button
-                  onClick={() => handleSelectPlan(plan.id)}
-                  variant={isPro ? 'primary' : 'outline'}
-                  size="lg"
-                  className={`w-full font-bold text-xs ${
-                    isPro ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''
-                  }`}
-                >
-                  {plan.price === 0 ? 'Commencer Gratuitement' : 'Choisir ce forfait'}
-                </Button>
-              </div>
-            </div>
           );
         })}
       </div>

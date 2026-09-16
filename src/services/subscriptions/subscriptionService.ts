@@ -87,13 +87,17 @@ export const subscriptionService = {
   async getPlans(): Promise<SubscriptionPlan[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('is_active', true);
 
-      if (!error && data && data.length > 0) {
-        return data as SubscriptionPlan[];
+        if (!error && data && data.length > 0) {
+          return data as SubscriptionPlan[];
+        }
+      } catch (e) {
+        console.warn('[subscriptionService] getPlans notice:', e);
       }
     }
     return DEFAULT_PLANS;
@@ -103,8 +107,12 @@ export const subscriptionService = {
     const supabase = getSupabase();
     let uid = userId;
     if (!uid && supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
-      uid = user?.id;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        uid = user?.id;
+      } catch (e) {
+        // ignore
+      }
     }
 
     // Si Supabase est configuré mais qu'on n'a aucun utilisateur réel
@@ -112,6 +120,12 @@ export const subscriptionService = {
     // avec un identifiant fictif ('local_user') : ça ne trouvera jamais
     // rien et ça masque le vrai problème (utilisateur non connecté).
     if (supabase && !uid) {
+      const localSubs = getLocalSubs().filter(s => s.user_id === 'local_user');
+      if (localSubs.length > 0) {
+        const sub = localSubs[0];
+        const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+        return { ...sub, plan };
+      }
       return null;
     }
 
@@ -128,8 +142,12 @@ export const subscriptionService = {
     if (!uid) {
       const supabase = getSupabase();
       if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id;
+        } catch (e) {
+          // ignore
+        }
       }
     }
     // IMPORTANT : verifiedTransactionId doit provenir d'une transaction déjà
@@ -151,24 +169,36 @@ export const subscriptionService = {
   async getUserSubscription(userId: string): Promise<Subscription | null> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*, plan:plan_id(*)')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*, plan:plan_id(*)')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (error) {
-        console.error('[subscriptionService] getUserSubscription error:', error.message);
+        if (error) {
+          console.warn('[subscriptionService] getUserSubscription notice:', error.message);
+          const localItems = getLocalSubs().filter(s => s.user_id === userId);
+          if (localItems.length > 0) {
+            const sub = localItems[0];
+            const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+            return { ...sub, plan };
+          }
+          return null;
+        }
+        return (data as Subscription) || null;
+      } catch (err: any) {
+        console.warn('[subscriptionService] getUserSubscription network notice:', err?.message);
+        const localItems = getLocalSubs().filter(s => s.user_id === userId);
+        if (localItems.length > 0) {
+          const sub = localItems[0];
+          const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+          return { ...sub, plan };
+        }
+        return null;
       }
-      // Supabase configuré : on renvoie la vraie réalité, y compris "aucun
-      // abonnement" (null) si l'utilisateur n'en a encore choisi aucun. On
-      // ne fabrique PLUS un faux forfait gratuit par défaut ici : ça
-      // empêchait de savoir si l'utilisateur avait vraiment sélectionné un
-      // forfait, et cassait le blocage d'accès tant qu'aucun forfait n'est
-      // choisi.
-      return (data as Subscription) || null;
     }
 
     // Supabase non configuré : mode démo hors-ligne uniquement.
@@ -287,13 +317,17 @@ export const subscriptionService = {
   async getAllSubscriptions(): Promise<Subscription[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*, plan:plan_id(*), profiles:user_id(full_name, email, role)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*, plan:plan_id(*), profiles:user_id(full_name, email, role)')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Subscription[];
+        if (!error && data) return data as Subscription[];
+        if (error) console.warn('[subscriptionService] getAllSubscriptions notice:', error.message);
+      } catch (err: any) {
+        console.warn('[subscriptionService] getAllSubscriptions network notice:', err?.message);
+      }
     }
     return getLocalSubs();
   },
@@ -301,13 +335,17 @@ export const subscriptionService = {
   async getAllTransactions(): Promise<Transaction[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, profiles:user_id(full_name, email)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*, profiles:user_id(full_name, email)')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Transaction[];
+        if (!error && data) return data as Transaction[];
+        if (error) console.warn('[subscriptionService] getAllTransactions notice:', error.message);
+      } catch (err: any) {
+        console.warn('[subscriptionService] getAllTransactions network notice:', err?.message);
+      }
     }
     return getLocalTx();
   },

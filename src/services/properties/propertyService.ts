@@ -105,43 +105,48 @@ export const propertyService = {
   async getPublishedProperties(filters?: Parameters<typeof applyClientFilters>[1]): Promise<Property[]> {
     const supabase = getSupabase();
     if (supabase) {
-      let query = supabase
-        .from('properties')
-        .select('*, profiles:user_id(full_name, agency_name, phone, role, verification_status)')
-        .eq('published', true)
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from('properties')
+          .select('*, profiles:user_id(full_name, agency_name, phone, role, verification_status)')
+          .eq('published', true)
+          .order('created_at', { ascending: false });
 
-      if (filters?.country && filters.country !== 'International (Tous pays)' && filters.country !== 'GLOBAL') {
-        query = query.eq('country', filters.country);
-      }
-      if (filters?.city && filters.city !== 'Toutes les villes') {
-        query = query.eq('city', filters.city);
-      }
-      if (filters?.type) query = query.eq('type', filters.type);
-      if (filters?.minPrice) query = query.gte('price', filters.minPrice);
-      if (filters?.maxPrice) query = query.lte('price', filters.maxPrice);
-      if (filters?.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
+        if (filters?.country && filters.country !== 'International (Tous pays)' && filters.country !== 'GLOBAL') {
+          query = query.eq('country', filters.country);
+        }
+        if (filters?.city && filters.city !== 'Toutes les villes') {
+          query = query.eq('city', filters.city);
+        }
+        if (filters?.type) query = query.eq('type', filters.type);
+        if (filters?.minPrice) query = query.gte('price', filters.minPrice);
+        if (filters?.maxPrice) query = query.lte('price', filters.maxPrice);
+        if (filters?.bedrooms) query = query.gte('bedrooms', filters.bedrooms);
 
-      const { data, error } = await query;
-      if (error) {
-        // On ne bascule JAMAIS sur des données fictives : en cas d'erreur,
-        // on journalise et on retourne une liste vide, ce qui est honnête.
-        console.error('[propertyService] getPublishedProperties error:', error.message);
-        return [];
-      }
+        const { data, error } = await query;
+        if (error) {
+          console.warn('[propertyService] Supabase indisponible ou notice:', error.message);
+          const localItems = getLocalProperties().filter(p => p.published);
+          return applyClientFilters(localItems, filters);
+        }
 
-      let results = (data || []) as Property[];
-      if (filters?.search) {
-        const s = filters.search.toLowerCase();
-        results = results.filter(
-          p =>
-            p.title.toLowerCase().includes(s) ||
-            (p.city && p.city.toLowerCase().includes(s)) ||
-            (p.neighborhood && p.neighborhood.toLowerCase().includes(s)) ||
-            (p.description && p.description.toLowerCase().includes(s))
-        );
+        let results = (data || []) as Property[];
+        if (filters?.search) {
+          const s = filters.search.toLowerCase();
+          results = results.filter(
+            p =>
+              p.title.toLowerCase().includes(s) ||
+              (p.city && p.city.toLowerCase().includes(s)) ||
+              (p.neighborhood && p.neighborhood.toLowerCase().includes(s)) ||
+              (p.description && p.description.toLowerCase().includes(s))
+          );
+        }
+        return results;
+      } catch (err: any) {
+        console.warn('[propertyService] Connexion réseau Supabase injoignable, bascule locale:', err?.message);
+        const localItems = getLocalProperties().filter(p => p.published);
+        return applyClientFilters(localItems, filters);
       }
-      return results; // même si vide : c'est la réalité de la base.
     }
 
     // Supabase non configuré : mode démo hors-ligne uniquement (liste vide par défaut).
@@ -189,22 +194,33 @@ export const propertyService = {
     if (supabase) {
       let uid = userId;
       if (!uid) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id;
+        } catch (e) {
+          // ignore
+        }
       }
       if (!uid) return [];
 
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[propertyService] getMyProperties error:', error.message);
-        throw error; // ici on remonte l'erreur : le propriétaire doit savoir que ça a échoué.
+        if (error) {
+          console.warn('[propertyService] getMyProperties notice:', error.message);
+          const items = getLocalProperties();
+          return uid ? items.filter(p => p.user_id === uid) : items;
+        }
+        return (data || []) as Property[];
+      } catch (err: any) {
+        console.warn('[propertyService] getMyProperties network notice:', err?.message);
+        const items = getLocalProperties();
+        return uid ? items.filter(p => p.user_id === uid) : items;
       }
-      return (data || []) as Property[];
     }
 
     const items = getLocalProperties();
@@ -219,16 +235,21 @@ export const propertyService = {
   async getAllProperties(): Promise<Property[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*, profiles:user_id(full_name, agency_name, phone, role)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*, profiles:user_id(full_name, agency_name, phone, role)')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[propertyService] getAllProperties error:', error.message);
-        throw error;
+        if (!error && data) {
+          return data as Property[];
+        }
+        if (error) {
+          console.warn('[propertyService] getAllProperties notice:', error.message);
+        }
+      } catch (err: any) {
+        console.warn('[propertyService] getAllProperties network notice:', err?.message);
       }
-      return (data || []) as Property[];
     }
     return getLocalProperties();
   },

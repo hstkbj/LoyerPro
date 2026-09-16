@@ -55,3 +55,57 @@ export function clearCustomSupabaseConfig() {
     supabaseInstance = null;
   }
 }
+
+export async function checkSupabaseHealth(): Promise<{
+  connected: boolean;
+  latencyMs?: number;
+  error?: string;
+  url?: string;
+}> {
+  const { url, anonKey, isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    return {
+      connected: false,
+      error: 'Supabase n\'est pas encore configuré (URL ou clé manquante).',
+    };
+  }
+
+  const start = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(`${url}/rest/v1/?apikey=${anonKey}`, {
+      method: 'GET',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok || res.status === 200 || res.status === 401 || res.status === 404) {
+      return {
+        connected: true,
+        latencyMs: Date.now() - start,
+        url,
+      };
+    }
+    return {
+      connected: false,
+      error: `Réponse HTTP ${res.status}: ${res.statusText}`,
+      url,
+    };
+  } catch (err: any) {
+    const isTimeout = err?.name === 'AbortError';
+    return {
+      connected: false,
+      error: isTimeout
+        ? 'Délai d\'attente dépassé (4s) : le serveur Supabase ne répond pas.'
+        : `Serveur introuvable ou injoignable (${err?.message || 'Erreur réseau/DNS'}).`,
+      url,
+    };
+  }
+}
+
