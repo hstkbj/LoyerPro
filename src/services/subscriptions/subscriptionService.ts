@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import { emailService } from '../email/emailService';
 import type { SubscriptionPlan, Subscription, Transaction } from '../../types';
 
 export const DEFAULT_PLANS: SubscriptionPlan[] = [
@@ -82,82 +83,145 @@ function saveLocalTx(items: Transaction[]) {
   }
 }
 
+const inFlightUserSubs = new Map<string, Promise<Subscription | null>>();
+
 export const subscriptionService = {
   async getPlans(): Promise<SubscriptionPlan[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('is_active', true);
 
-      if (!error && data && data.length > 0) {
-        return data as SubscriptionPlan[];
+        if (!error && data && data.length > 0) {
+          return data as SubscriptionPlan[];
+        }
+      } catch (e) {
+        console.warn('[subscriptionService] getPlans notice:', e);
       }
     }
     return DEFAULT_PLANS;
   },
 
-  async getMySubscription(userId?: string): Promise<Subscription> {
+  async getMySubscription(userId?: string): Promise<Subscription | null> {
+    const supabase = getSupabase();
     let uid = userId;
-    if (!uid) {
-      const supabase = getSupabase();
-      if (supabase) {
+    if (!uid && supabase) {
+      try {
         const { data: { user } } = await supabase.auth.getUser();
         uid = user?.id;
+      } catch (e) {
+        // ignore
       }
     }
+
+    // Si Supabase est configuré mais qu'on n'a aucun utilisateur réel
+    // (session absente/expirée), il ne faut PAS interroger la vraie base
+    // avec un identifiant fictif ('local_user') : ça ne trouvera jamais
+    // rien et ça masque le vrai problème (utilisateur non connecté).
+    if (supabase && !uid) {
+      const localSubs = getLocalSubs().filter(s => s.user_id === 'local_user');
+      if (localSubs.length > 0) {
+        const sub = localSubs[0];
+        const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+        return { ...sub, plan };
+      }
+      return null;
+    }
+
     return this.getUserSubscription(uid || 'local_user');
   },
 
-  async upgradeSubscription(planId: string, paymentMethod?: string, userId?: string): Promise<Subscription> {
+  async upgradeSubscription(
+    planId: string,
+    paymentMethod?: string,
+    userId?: string,
+    verifiedTransactionId?: string | number
+  ): Promise<Subscription> {
     let uid = userId;
     if (!uid) {
       const supabase = getSupabase();
       if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser();
-        uid = user?.id;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id;
+        } catch (e) {
+          // ignore
+        }
       }
     }
-    return this.createOrUpgradeSubscription(uid || 'local_user', planId, 'TX_FP_' + Date.now(), paymentMethod || 'FedaPay Mobile Money');
+    // IMPORTANT : verifiedTransactionId doit provenir d'une transaction déjà
+    // confirmée "approved" par /api/fedapay/verify-transaction/:id (voir
+    // fedapayCheckout.ts). On ne doit plus jamais fabriquer un faux
+    // identifiant ici : ça revenait à activer un abonnement payant sans
+    // paiement réel.
+    if (!verifiedTransactionId && planId !== 'free') {
+      throw new Error("Un identifiant de transaction FedaPay vérifié est requis pour activer un forfait payant.");
+    }
+    return this.createOrUpgradeSubscription(
+      uid || 'local_user',
+      planId,
+      verifiedTransactionId ? String(verifiedTransactionId) : undefined,
+      paymentMethod || 'FedaPay Mobile Money'
+    );
   },
 
-  async getUserSubscription(userId: string): Promise<Subscription> {
-    const supabase = getSupabase();
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*, plan:plan_id(*)')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  async getUserSubscription(userId: string): Promise<Subscription | null> {
+    if (inFlightUserSubs.has(userId)) {
+      return inFlightUserSubs.get(userId)!;
+    }
 
-      if (!error && data) {
-        return data as Subscription;
+    const fetchPromise = (async () => {
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('subscriptions')
+            .select('*, plan:plan_id(*)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (error) {
+            console.warn('[subscriptionService] getUserSubscription notice:', error.message);
+            const localItems = getLocalSubs().filter(s => s.user_id === userId);
+            if (localItems.length > 0) {
+              const sub = localItems[0];
+              const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+              return { ...sub, plan };
+            }
+            return null;
+          }
+          return (data as Subscription) || null;
+        } catch (err: any) {
+          console.warn('[subscriptionService] getUserSubscription network notice:', err?.message);
+          const localItems = getLocalSubs().filter(s => s.user_id === userId);
+          if (localItems.length > 0) {
+            const sub = localItems[0];
+            const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+            return { ...sub, plan };
+          }
+          return null;
+        }
       }
-    }
 
-    const items = getLocalSubs().filter(s => s.user_id === userId);
-    if (items.length > 0) {
-      const sub = items[0];
-      const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
-      return { ...sub, plan };
-    }
+      // Supabase non configuré : mode démo hors-ligne uniquement.
+      const items = getLocalSubs().filter(s => s.user_id === userId);
+      if (items.length > 0) {
+        const sub = items[0];
+        const plan = DEFAULT_PLANS.find(p => p.id === sub.plan_id) || DEFAULT_PLANS[0];
+        return { ...sub, plan };
+      }
+      return null;
+    })().finally(() => {
+      setTimeout(() => inFlightUserSubs.delete(userId), 2000);
+    });
 
-    // Default free plan for active account
-    const defaultSub: Subscription = {
-      id: 'sub_default_' + userId,
-      user_id: userId,
-      plan_id: 'free',
-      status: 'active',
-      start_date: new Date().toISOString(),
-      amount: 0,
-      payment_gateway: 'system',
-      plan: DEFAULT_PLANS[0],
-      created_at: new Date().toISOString(),
-    };
-    return defaultSub;
+    inFlightUserSubs.set(userId, fetchPromise);
+    return fetchPromise;
   },
 
   async createOrUpgradeSubscription(
@@ -202,6 +266,28 @@ export const subscriptionService = {
         });
       }
 
+      // Email de confirmation d'abonnement - non bloquant
+      supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', userId)
+        .single()
+        .then(
+          ({ data: prof }) => {
+            if (prof?.email) {
+              emailService.sendSubscriptionConfirmed(prof.email, {
+                fullName: prof.full_name,
+                planName: plan.name,
+                amount: plan.price,
+                currency: plan.currency,
+                interval: plan.interval,
+                transactionId: fedapayTransactionId,
+              }).catch(() => {});
+            }
+          },
+          () => {}
+        );
+
       return data as Subscription;
     }
 
@@ -244,13 +330,17 @@ export const subscriptionService = {
   async getAllSubscriptions(): Promise<Subscription[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*, plan:plan_id(*), profiles:user_id(full_name, email, role)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*, plan:plan_id(*), profiles:user_id(full_name, email, role)')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Subscription[];
+        if (!error && data) return data as Subscription[];
+        if (error) console.warn('[subscriptionService] getAllSubscriptions notice:', error.message);
+      } catch (err: any) {
+        console.warn('[subscriptionService] getAllSubscriptions network notice:', err?.message);
+      }
     }
     return getLocalSubs();
   },
@@ -258,13 +348,17 @@ export const subscriptionService = {
   async getAllTransactions(): Promise<Transaction[]> {
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, profiles:user_id(full_name, email)')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*, profiles:user_id(full_name, email)')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as Transaction[];
+        if (!error && data) return data as Transaction[];
+        if (error) console.warn('[subscriptionService] getAllTransactions notice:', error.message);
+      } catch (err: any) {
+        console.warn('[subscriptionService] getAllTransactions network notice:', err?.message);
+      }
     }
     return getLocalTx();
   },

@@ -33,23 +33,20 @@ export function PublicNavbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-7 text-xs lg:text-sm font-medium text-slate-600">
             <Link to="/" className="hover:text-slate-900 transition-colors">
               Accueil
             </Link>
-            <Link to="/properties" className="hover:text-slate-900 transition-colors flex items-center gap-1.5">
-              <span>Chambres & Logements</span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Dispos
-              </span>
-            </Link>
-            <Link to="/about" className="hover:text-slate-900 transition-colors">
-              À propos
+            <Link to="/properties" className="hover:text-slate-900 transition-colors">
+              Chambres & Logements
             </Link>
             <Link to="/pricing" className="hover:text-slate-900 transition-colors">
               Tarifs
             </Link>
-            <Link to="/contact" className="hover:text-slate-900 transition-colors">
+            <Link to="/about" className="hover:text-slate-900 transition-colors">
+              À propos
+            </Link>
+            <Link to="/contact" className="hover:text-slate-900 transition-colors font-medium">
               Contact
             </Link>
           </nav>

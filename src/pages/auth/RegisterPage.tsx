@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGeo } from '../../contexts/GeoContext';
 import { Input } from '../../components/ui/Input';
@@ -15,13 +15,27 @@ import {
   AlertCircle,
   X,
   FileText,
+  MailCheck,
 } from 'lucide-react';
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { currentCountry, availableCountries } = useGeo();
+  const [searchParams] = useSearchParams();
 
+  // Forfait choisi depuis la page tarifs (/pricing?plan=X) : on le conserve
+  // pour que l'utilisateur soit invité à payer juste après confirmation de
+  // son compte, au lieu de rester silencieusement en forfait gratuit.
+  const selectedPlan = searchParams.get('plan');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && selectedPlan) {
+      localStorage.setItem('loyerpro_pending_plan', selectedPlan);
+    }
+  }, [selectedPlan]);
+
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [role, setRole] = useState<UserRole>('owner');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -111,10 +125,43 @@ export function RegisterPage() {
 
     if (res.error) {
       setError(res.error);
+    } else if (res.requiresEmailConfirmation) {
+      setAwaitingConfirmation(true);
+    } else if (selectedPlan) {
+      navigate(`/dashboard/settings?tab=subscription&selectedPlan=${selectedPlan}`);
     } else {
       navigate('/dashboard');
     }
   };
+
+  if (awaitingConfirmation) {
+    return (
+      <div className="min-h-[85vh] flex flex-col justify-center items-center py-12 px-4 bg-slate-50 text-center">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xs p-8 space-y-4">
+          <div className="mx-auto h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center">
+            <MailCheck className="h-7 w-7 text-emerald-600" />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">Vérifiez votre boîte mail</h1>
+          <p className="text-sm text-slate-600">
+            Nous avons envoyé un lien de confirmation à <strong>{email}</strong>. Cliquez dessus pour activer votre
+            compte, puis connectez-vous.
+          </p>
+          {selectedPlan && (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
+              Une fois connecté(e), vous pourrez activer et régler le forfait que vous avez choisi depuis
+              Paramètres → Abonnement.
+            </p>
+          )}
+          <p className="text-xs text-slate-400">
+            Vous ne voyez rien ? Vérifiez vos courriers indésirables, ou patientez quelques minutes.
+          </p>
+          <Link to="/login">
+            <Button className="w-full mt-2">Aller à la page de connexion</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">

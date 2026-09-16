@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase/client';
+import { emailService } from '../email/emailService';
 import type { VisitRequest, VisitStatus } from '../../types';
 
 const STORAGE_KEY = 'loyerpro_data_visits';
@@ -27,6 +28,29 @@ export const visitService = {
         .single();
 
       if (error) throw error;
+
+      // Notifie le propriétaire/l'agence par email - non bloquant
+      supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', visit.owner_id)
+        .single()
+        .then(
+          ({ data: owner }) => {
+            if (owner?.email) {
+              emailService.sendNewVisitRequest(owner.email, {
+                ownerName: owner.full_name,
+                propertyTitle: (data as any)?.property?.title || 'votre bien',
+                visitorName: visit.visitor_name,
+                visitorPhone: visit.visitor_phone,
+                preferredDate: visit.preferred_date,
+                preferredTime: visit.preferred_time,
+              }).catch(() => {});
+            }
+          },
+          () => {}
+        );
+
       return data as VisitRequest;
     }
 

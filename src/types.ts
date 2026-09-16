@@ -226,9 +226,16 @@ export interface SubscriptionPlan {
   currency: string;
   interval: 'month' | 'year';
   max_properties: number;
+  max_tenants?: number;
   description: string;
   features: string[];
   popular?: boolean;
+  is_featured?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+  trial_days?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type SubscriptionStatus = 'active' | 'canceled' | 'expired' | 'past_due';

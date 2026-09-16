@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { getSupabase, getSupabaseConfig, setCustomSupabaseConfig } from '../services/supabase/client';
+import { emailService } from '../services/email/emailService';
 import type { Profile, UserRole, VerificationDocument, VerificationStatus } from '../types';
 
 interface AuthContextType {
@@ -23,11 +24,12 @@ interface AuthContextType {
     country?: string;
     city?: string;
     verificationDocuments?: VerificationDocument[];
-  }) => Promise<{ error?: string }>;
+  }) => Promise<{ error?: string; requiresEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error?: string }>;
   submitVerificationDocuments: (documents: VerificationDocument[]) => Promise<{ error?: string }>;
   adminVerifyUser: (userId: string, status: VerificationStatus, reason?: string) => Promise<{ error?: string }>;
+  adminToggleSuspend: (userId: string, suspend: boolean) => Promise<{ error?: string }>;
   configureSupabase: (url: string, key: string) => void;
 }
 
@@ -41,10 +43,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check Supabase configuration and initial session
   useEffect(() => {
+    // IMPORTANT : ce useEffect ne doit s'exécuter qu'UNE SEULE FOIS au montage.
+    // Bug corrigé ici : il dépendait auparavant de `isSupabaseConfigured`,
+    // qu'il modifiait lui-même via setIsSupabaseConfigured() — ce qui le
+    // redéclenchait en boucle, créant à chaque fois un nouvel écouteur
+    // onAuthStateChange jamais nettoyé (voir plus bas). Ces écouteurs
+    // s'accumulaient et chacun refaisait ses propres requêtes Supabase en
+    // parallèle, provoquant la tempête de requêtes identiques et les erreurs
+    // ERR_CONNECTION_RESET / ERR_HTTP2_PROTOCOL_ERROR observées.
+    let unsubscribeAuthListener: (() => void) | undefined;
+    let isMounted = true;
+
     async function initAuth() {
       setLoading(true);
       const config = getSupabaseConfig();
-      setIsSupabaseConfigured(config.isConfigured);
+      if (isMounted) setIsSupabaseConfigured(config.isConfigured);
 
       const supabase = getSupabase();
 
@@ -54,52 +67,107 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             setUser({ id: session.user.id, email: session.user.email || '' });
             // Fetch profile
-            const { data: prof, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-
-            if (prof && !error) {
-              setProfile(prof as Profile);
-            } else {
-              // fallback profile from metadata
-              const newProf: Profile = {
-                id: session.user.id,
-                email: session.user.email || '',
-                full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
-                phone: session.user.user_metadata?.phone || '',
-                role: (session.user.user_metadata?.role as UserRole) || 'owner',
-                agency_name: session.user.user_metadata?.agency_name,
-                city: session.user.user_metadata?.city || 'Cotonou',
-              };
-              setProfile(newProf);
-            }
-          } else {
-            setUser(null);
-            setProfile(null);
-          }
-
-          // Listener
-          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (session?.user) {
-              setUser({ id: session.user.id, email: session.user.email || '' });
-              const { data: prof } = await supabase
+            try {
+              const { data: prof, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
-              if (prof) setProfile(prof as Profile);
-            } else {
+
+              if (prof && !error) {
+                if (prof.is_suspended) {
+                  // Compte suspendu entre-temps par le SuperAdmin : on force la déconnexion.
+                  await supabase.auth.signOut();
+                  if (isMounted) {
+                    setUser(null);
+                    setProfile(null);
+                  }
+                } else if (isMounted) {
+                  setProfile(prof as Profile);
+                }
+              } else if (isMounted) {
+                // fallback profile from metadata
+                const newProf: Profile = {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                  phone: session.user.user_metadata?.phone || '',
+                  role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                  agency_name: session.user.user_metadata?.agency_name,
+                  city: session.user.user_metadata?.city || 'Cotonou',
+                };
+                setProfile(newProf);
+              }
+            } catch (err) {
+              console.warn('[AuthContext] Impossible de joindre profiles, profil de secours activé:', err);
+              if (isMounted) {
+                setProfile({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                  phone: session.user.user_metadata?.phone || '',
+                  role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                  agency_name: session.user.user_metadata?.agency_name,
+                  city: session.user.user_metadata?.city || 'Cotonou',
+                });
+              }
+            }
+          } else if (isMounted) {
+            setUser(null);
+            setProfile(null);
+          }
+
+          // Listener — un SEUL, car ce useEffect ne s'exécute plus qu'une fois.
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (!isMounted) return;
+            if (session?.user) {
+              setUser({ id: session.user.id, email: session.user.email || '' });
+              try {
+                const { data: prof, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
+                if (prof?.is_suspended) {
+                  await supabase.auth.signOut();
+                  if (isMounted) {
+                    setUser(null);
+                    setProfile(null);
+                  }
+                } else if (prof && !error) {
+                  if (isMounted) setProfile(prof as Profile);
+                } else if (isMounted) {
+                  setProfile({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                    phone: session.user.user_metadata?.phone || '',
+                    role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                    agency_name: session.user.user_metadata?.agency_name,
+                    city: session.user.user_metadata?.city || 'Cotonou',
+                  });
+                }
+              } catch (err) {
+                if (isMounted) {
+                  setProfile({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Utilisateur',
+                    phone: session.user.user_metadata?.phone || '',
+                    role: (session.user.user_metadata?.role as UserRole) || 'owner',
+                    agency_name: session.user.user_metadata?.agency_name,
+                    city: session.user.user_metadata?.city || 'Cotonou',
+                  });
+                }
+              }
+            } else if (isMounted) {
               setUser(null);
               setProfile(null);
             }
           });
 
+          unsubscribeAuthListener = () => subscription.unsubscribe();
           setLoading(false);
-          return () => {
-            subscription.unsubscribe();
-          };
         } catch (err) {
           console.error('Supabase Auth init error:', err);
           setLoading(false);
@@ -122,7 +190,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     initAuth();
-  }, [isSupabaseConfigured]);
+
+    // Nettoyage RÉELLEMENT exécuté par React cette fois : plus de fuite
+    // d'écouteur, donc plus de requêtes dupliquées qui s'accumulent.
+    return () => {
+      isMounted = false;
+      unsubscribeAuthListener?.();
+    };
+  }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
     const supabase = getSupabase();
@@ -130,8 +205,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
       if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' });
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+
+        // Un compte suspendu par le SuperAdmin ne doit plus pouvoir accéder
+        // à l'application, même si son mot de passe est correct.
+        if (prof?.is_suspended) {
+          await supabase.auth.signOut();
+          return { error: "Ce compte a été suspendu par l'administration. Contactez le support pour plus d'informations." };
+        }
+
+        setUser({ id: data.user.id, email: data.user.email || '' });
         if (prof) setProfile(prof as Profile);
       }
       return {};
@@ -162,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     country?: string;
     city?: string;
     verificationDocuments?: VerificationDocument[];
-  }): Promise<{ error?: string }> => {
+  }): Promise<{ error?: string; requiresEmailConfirmation?: boolean }> => {
     const status: VerificationStatus = params.verificationDocuments && params.verificationDocuments.length > 0 
       ? 'pending' 
       : 'unverified';
@@ -173,18 +256,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: params.email,
         password: params.password,
         options: {
+          // Sans ce paramètre, Supabase utilise la "Site URL" configurée
+          // dans le tableau de bord (Authentication > URL Configuration),
+          // qui pointe par défaut sur localhost:3000. On force ici l'URL
+          // réelle du domaine sur lequel l'app tourne (Vercel en prod,
+          // localhost en dev), pour que le lien de confirmation reçu par
+          // email renvoie toujours au bon endroit.
+          emailRedirectTo: `${window.location.origin}/auth/login`,
           data: {
             full_name: params.fullName,
             phone: params.phone,
             role: params.role,
             agency_name: params.agencyName || null,
-            country: params.country || 'Côte d’Ivoire',
-            city: params.city || 'Abidjan',
+            country: params.country,
+            city: params.city,
             verification_status: status,
+            // Important : c'est le trigger handle_new_user() (base de
+            // données, migration 0004) qui lit ces métadonnées pour créer
+            // le profil complet. On ne peut pas compter sur un upsert
+            // client juste après, car tant que l'email n'est pas confirmé
+            // il n'y a pas de session active et les policies RLS bloquent
+            // l'écriture.
+            verification_documents: params.verificationDocuments || [],
           },
         },
       });
       if (error) return { error: error.message };
+
+      // Pas de session = confirmation d'email requise avant de pouvoir se
+      // connecter. Il ne faut surtout pas considérer l'utilisateur comme
+      // connecté ni le renvoyer vers /dashboard dans ce cas : la session
+      // n'existe pas encore, aucune requête authentifiée ne fonctionnera.
+      if (!data.session) {
+        return { requiresEmailConfirmation: true };
+      }
+
       if (data.user) {
         const newProf: Profile = {
           id: data.user.id,
@@ -193,15 +299,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: params.phone,
           role: params.role,
           agency_name: params.agencyName,
-          country: params.country || "Côte d'Ivoire",
-          city: params.city || 'Abidjan',
+          country: params.country,
+          city: params.city,
           verification_status: status,
           verification_documents: params.verificationDocuments || [],
         };
-        // Ensure profile row exists
+        // Une session active existe déjà (confirmation d'email désactivée
+        // sur ce projet) : on peut écrire immédiatement sans attendre.
         await supabase.from('profiles').upsert(newProf);
         setUser({ id: data.user.id, email: params.email });
         setProfile(newProf);
+
+        // Email de bienvenue - non bloquant, ne doit jamais empêcher l'inscription
+        emailService.sendWelcome(params.email, { fullName: params.fullName, role: params.role }).catch(() => {});
       }
       return {};
     } else {
@@ -219,8 +329,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: params.phone,
         role: params.role,
         agency_name: params.agencyName,
-        country: params.country || "Côte d'Ivoire",
-        city: params.city || 'Abidjan',
+        country: params.country,
+        city: params.city,
         verification_status: status,
         verification_documents: params.verificationDocuments || [],
       };
@@ -232,6 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(newProf);
       localStorage.setItem('loyerpro_local_user', JSON.stringify(u));
       localStorage.setItem('loyerpro_local_profile', JSON.stringify(newProf));
+      emailService.sendWelcome(params.email, { fullName: params.fullName, role: params.role }).catch(() => {});
       return {};
     }
   };
@@ -252,15 +363,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verifiedAt = status === 'verified' ? new Date().toISOString() : undefined;
 
     if (supabase) {
-      const { error } = await supabase
+      const { data: targetProfile, error } = await supabase
         .from('profiles')
         .update({
           verification_status: status,
           verified_at: verifiedAt,
           rejection_reason: reason || null,
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('email, full_name')
+        .single();
       if (error) return { error: error.message };
+
+      // Notifie le propriétaire/l'agence du résultat de la vérification - non bloquant
+      if (targetProfile?.email) {
+        if (status === 'verified') {
+          emailService.sendAccountVerified(targetProfile.email, { fullName: targetProfile.full_name }).catch(() => {});
+        } else if (status === 'rejected') {
+          emailService.sendAccountRejected(targetProfile.email, { fullName: targetProfile.full_name, reason }).catch(() => {});
+        }
+      }
     }
 
     // Update local users list if present
@@ -289,6 +411,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setProfile(updated);
       localStorage.setItem('loyerpro_local_profile', JSON.stringify(updated));
+    }
+
+    return {};
+  };
+
+  const adminToggleSuspend = async (userId: string, suspend: boolean): Promise<{ error?: string }> => {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_suspended: suspend })
+        .eq('id', userId);
+      if (error) return { error: error.message };
+    }
+
+    const usersStr = localStorage.getItem('loyerpro_registered_users');
+    if (usersStr) {
+      try {
+        const users = JSON.parse(usersStr) as Array<{ id: string; email: string; password: string; profile: Profile }>;
+        const idx = users.findIndex(u => u.id === userId || u.profile.id === userId);
+        if (idx !== -1) {
+          users[idx].profile.is_suspended = suspend;
+          localStorage.setItem('loyerpro_registered_users', JSON.stringify(users));
+        }
+      } catch (e) {
+        console.error('Error updating local registered users:', e);
+      }
     }
 
     return {};
@@ -347,6 +496,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     submitVerificationDocuments,
     adminVerifyUser,
+    adminToggleSuspend,
     configureSupabase,
   }), [user, profile, role, isSuperAdmin, isAgency, isVerified, verificationStatus, loading, isSupabaseConfigured]);
 

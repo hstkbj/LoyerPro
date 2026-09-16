@@ -1,7 +1,9 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GeoProvider } from './contexts/GeoContext';
+import { trackPageView } from './lib/gtag';
+import { subscriptionService } from './services/subscriptions/subscriptionService';
 
 // Layouts
 import { PublicNavbar } from './components/layout/PublicNavbar';
@@ -44,6 +46,17 @@ import { SuperAdminPropertiesPage } from './pages/superadmin/SuperAdminPropertie
 import { SuperAdminSubscriptionsPage } from './pages/superadmin/SuperAdminSubscriptionsPage';
 import { SuperAdminPaymentsPage } from './pages/superadmin/SuperAdminPaymentsPage';
 import { SuperAdminSettingsPage } from './pages/superadmin/SuperAdminSettingsPage';
+import { SuperAdminPlansPage } from './pages/superadmin/SuperAdminPlansPage';
+import { SuperAdminAnalyticsPage } from './pages/superadmin/SuperAdminAnalyticsPage';
+
+// Envoie un événement page_view à Google Analytics à chaque changement de route
+function AnalyticsRouteTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+  return null;
+}
 
 // Helper component for public page frame
 function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -58,9 +71,35 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 
 // Protected Route wrapper for Owner/Dashboard
 function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isSuperAdmin, loading, isSupabaseConfigured } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  // Tant que l'utilisateur n'a pas explicitement choisi un forfait (même
+  // gratuit) depuis Paramètres > Abonnement, on bloque l'accès au reste du
+  // tableau de bord et on l'y redirige. La page Paramètres elle-même reste
+  // toujours accessible, sinon personne ne pourrait jamais choisir de plan.
+  const [subCheckDone, setSubCheckDone] = useState(false);
+  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isSupabaseConfigured || !user || isSuperAdmin) {
+      setSubCheckDone(true);
+      return;
+    }
+    setSubCheckDone(false);
+    subscriptionService.getMySubscription(user.id).then((sub) => {
+      if (!cancelled) {
+        setHasPlan(Boolean(sub));
+        setSubCheckDone(true);
+      }
+    }).catch(() => {
+      if (!cancelled) setSubCheckDone(true); // en cas d'erreur réseau, on ne bloque pas indéfiniment
+    });
+    return () => { cancelled = true; };
+  }, [user?.id, isSuperAdmin, isSupabaseConfigured]);
+
+  if (loading || !subCheckDone) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-xs text-slate-500 font-medium">Chargement de votre session...</div>
@@ -68,13 +107,28 @@ function ProtectedOwnerRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow access for testing / local use even before signup, but prompt login if desired
+  // Une fois Supabase connecté, l'espace propriétaire/agence exige une session valide.
+  // Avant configuration (premier lancement local), on laisse passer pour permettre la démo.
+  if (isSupabaseConfigured && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Le superadmin garde son propre espace dédié
+  if (isSuperAdmin) {
+    return <Navigate to="/superadmin/dashboard" replace />;
+  }
+
+  const isSettingsPage = location.pathname.startsWith('/dashboard/settings');
+  if (isSupabaseConfigured && hasPlan === false && !isSettingsPage) {
+    return <Navigate to="/dashboard/settings?tab=subscription" replace />;
+  }
+
   return <OwnerLayout>{children}</OwnerLayout>;
 }
 
 // Protected Route wrapper for SuperAdmin
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
-  const { isSuperAdmin, loading } = useAuth();
+  const { user, isSuperAdmin, loading, isSupabaseConfigured } = useAuth();
 
   if (loading) {
     return (
@@ -82,6 +136,14 @@ function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
         <div className="text-xs text-slate-400 font-medium">Vérification des droits d'administration...</div>
       </div>
     );
+  }
+
+  if (isSupabaseConfigured && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isSupabaseConfigured && !isSuperAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <SuperAdminLayout>{children}</SuperAdminLayout>;
@@ -92,6 +154,7 @@ export default function App() {
     <AuthProvider>
       <GeoProvider>
         <BrowserRouter>
+          <AnalyticsRouteTracker />
           <Routes>
             {/* Public Portal */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -133,8 +196,10 @@ export default function App() {
           <Route path="/superadmin/dashboard" element={<ProtectedAdminRoute><SuperAdminDashboardPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/users" element={<ProtectedAdminRoute><SuperAdminUsersPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/properties" element={<ProtectedAdminRoute><SuperAdminPropertiesPage /></ProtectedAdminRoute>} />
+          <Route path="/superadmin/plans" element={<ProtectedAdminRoute><SuperAdminPlansPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/subscriptions" element={<ProtectedAdminRoute><SuperAdminSubscriptionsPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/payments" element={<ProtectedAdminRoute><SuperAdminPaymentsPage /></ProtectedAdminRoute>} />
+          <Route path="/superadmin/analytics" element={<ProtectedAdminRoute><SuperAdminAnalyticsPage /></ProtectedAdminRoute>} />
           <Route path="/superadmin/settings" element={<ProtectedAdminRoute><SuperAdminSettingsPage /></ProtectedAdminRoute>} />
 
           {/* Fallback */}

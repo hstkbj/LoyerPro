@@ -67,10 +67,9 @@ export function AboutPage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              <Sparkles className="h-3.5 w-3.5" />
-              Notre Mission
-            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+              Notre Mission & Vision
+            </p>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Mettre fin aux arnaques et simplifier chaque bail
             </h2>

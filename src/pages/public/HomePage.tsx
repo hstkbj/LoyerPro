@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { propertyService } from '../../services/properties/propertyService';
-import type { Property } from '../../types';
+import type { Property, SubscriptionPlan } from '../../types';
 import { PropertyCard } from '../../components/public/PropertyCard';
 import { Button } from '../../components/ui/Button';
 import { useGeo } from '../../contexts/GeoContext';
 import { LocationSelectorModal } from '../../components/layout/LocationSelectorModal';
 import { getPricingPlansList } from '../../services/currency/currencyService';
+import { planService } from '../../services/plans/planService';
 import {
   Search,
   Building2,
@@ -24,6 +25,7 @@ import {
   Check,
   CreditCard,
   Smartphone,
+  MessageSquare,
 } from 'lucide-react';
 
 export function HomePage() {
@@ -32,6 +34,7 @@ export function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [dbPlans, setDbPlans] = useState<SubscriptionPlan[] | undefined>(undefined);
 
   // Search state
   const [searchCity, setSearchCity] = useState(currentCity);
@@ -39,7 +42,22 @@ export function HomePage() {
   const [maxPrice, setMaxPrice] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  const pricingPlans = getPricingPlansList(currentCurrency);
+  useEffect(() => {
+    let cancelled = false;
+    planService
+      .getAllPlans(false)
+      .then((plans) => {
+        if (!cancelled) setDbPlans(plans);
+      })
+      .catch(() => {
+        if (!cancelled) setDbPlans(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const pricingPlans = getPricingPlansList(currentCurrency, dbPlans);
 
   useEffect(() => {
     setSearchCity(currentCity);
@@ -298,11 +316,10 @@ export function HomePage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Card Locataire */}
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-8 shadow-xs space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-              <Users className="h-3.5 w-3.5" />
-              Vous cherchez une chambre ou un logement ?
-            </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+              Pour les Locataires
+            </p>
             <h3 className="text-xl font-extrabold text-slate-900">
               Louez en toute tranquillité, sans démarcheur suspect
             </h3>
@@ -330,11 +347,10 @@ export function HomePage() {
           </div>
 
           {/* Card Propriétaire */}
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-8 shadow-xs space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-bold">
-              <Building2 className="h-3.5 w-3.5" />
-              Vous êtes propriétaire bailleur ou agence ?
-            </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Pour les Propriétaires & Agences
+            </p>
             <h3 className="text-xl font-extrabold text-slate-900">
               Gérez votre patrimoine sans stress et encaissez à temps
             </h3>
@@ -366,10 +382,9 @@ export function HomePage() {
       {/* 4. Tarifs & Abonnements Section */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 text-white text-xs font-bold shadow-xs">
-            <CreditCard className="h-3.5 w-3.5 text-emerald-400" />
-            Tarifs Transparents & Sans Surprise
-          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+            Tarifs & Abonnements
+          </p>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900">
             Des forfaits pensés pour votre région
           </h2>
@@ -396,15 +411,15 @@ export function HomePage() {
             return (
               <div
                 key={plan.id}
-                className={`flex flex-col justify-between rounded-3xl p-6 sm:p-8 bg-white border transition-all ${
+                className={`flex flex-col justify-between rounded-2xl p-6 sm:p-8 bg-white border transition-all ${
                   isPro
-                    ? 'border-slate-900 shadow-xl ring-2 ring-slate-900 relative'
+                    ? 'border-slate-900 shadow-md ring-2 ring-slate-900 relative'
                     : 'border-slate-200 shadow-xs hover:border-slate-300'
                 }`}
               >
                 {isPro && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
-                    Formule Recommandée
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-3.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                    Recommandé
                   </span>
                 )}
 
@@ -423,7 +438,7 @@ export function HomePage() {
                         <span className="text-xs text-slate-500 font-medium">/ {plan.period}</span>
                       )}
                     </div>
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mt-2 border border-emerald-200">
+                    <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md inline-block mt-2">
                       Capacité : {plan.max_properties > 1000 ? 'Biens & Chambres illimités' : `Jusqu'à ${plan.max_properties} logements`}
                     </span>
                   </div>
@@ -444,16 +459,25 @@ export function HomePage() {
                     onClick={() => navigate(`/auth/register?plan=${plan.id}`)}
                     variant={isPro ? 'primary' : 'outline'}
                     size="md"
-                    className={`w-full font-bold text-xs ${
-                      isPro ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''
-                    }`}
+                    className="w-full font-bold text-xs"
                   >
-                    {plan.price === 0 ? 'Commencer Gratuitement' : 'Choisir cette formule'}
+                    {plan.price === 0 ? 'Commencer Gratuitement' : `Choisir ${plan.name}`}
                   </Button>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Link to Full Pricing */}
+        <div className="text-center pt-2">
+          <Link
+            to="/pricing"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900"
+          >
+            <span>Voir le tableau comparatif complet et tous les détails des forfaits</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
         {/* Payment Methods Badges */}
@@ -478,10 +502,9 @@ export function HomePage() {
       <section className="bg-slate-900 text-white py-14 px-4 sm:px-6 lg:px-8 border-y border-slate-800">
         <div className="mx-auto max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-10">
           <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
-              <ShieldCheck className="h-4 w-4" />
-              Protocole de Certification LoyerPro
-            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              Contrôle & Sécurité
+            </p>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Pourquoi exiger l'envoi de pièces d'identité et documents officiels ?
             </h2>
@@ -492,13 +515,47 @@ export function HomePage() {
 
           <div className="shrink-0 flex flex-col sm:flex-row gap-3">
             <Link to="/about#verification">
-              <Button variant="outline-white" size="md" className="font-bold">
+              <Button
+                variant="outline-white"
+                size="md"
+                className="font-medium text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-slate-500"
+              >
                 En savoir plus sur la vérification
               </Button>
             </Link>
             <Link to="/auth/register">
-              <Button variant="primary" size="md" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold">
+              <Button
+                variant="primary"
+                size="md"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold border-transparent"
+              >
                 Commencer mon inscription
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Contact & Support Client Banner */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+          <div className="space-y-1.5 text-center md:text-left">
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+              Assistance & Support Client
+            </p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">
+              Besoin d'aide ou d'un renseignement sur un logement ?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
+              Notre équipe d'assistance vous répond 7j/7 par WhatsApp, email ou formulaire direct.
+            </p>
+          </div>
+          <div className="shrink-0 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/contact">
+              <Button variant="primary" size="md" className="font-semibold text-xs">
+                <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+                <span>Accéder à la page Contact</span>
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             </Link>
           </div>
