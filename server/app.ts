@@ -1,5 +1,5 @@
 import express from 'express';
-import crypto from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleAuth } from 'google-auth-library';
@@ -101,14 +101,13 @@ function verifyFedaPayWebhookSignature(rawBody: string, header: string | undefin
 
   if (parts.timestamp === -1 || parts.signatures.length === 0) return false;
 
-  const expected = crypto
-    .createHmac('sha256', secret)
+  const expected = createHmac('sha256', secret)
     .update(`${parts.timestamp}.${rawBody}`, 'utf8')
     .digest('hex');
 
   const matches = parts.signatures.some((sig) => {
     try {
-      return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+      return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
     } catch {
       return false;
     }
