@@ -108,9 +108,27 @@ la CLI Supabase (`supabase db push`) :
    - Trigger `enforce_property_plan_limit` : bloque la création d'un bien au-delà du
      quota du plan actif de l'utilisateur.
    - Index de performance pour les tableaux de bord SuperAdmin.
+3. **`0003_fix_production_bugs.sql`** — Corrections diverses de bugs de production
+   remontés après la mise en ligne initiale.
+4. **`0004_fix_signup_trigger.sql`** — Correction du trigger de création automatique de
+   profil à l'inscription.
+5. **`0005_require_plan_selection.sql`** — Retire l'attribution automatique du forfait
+   gratuit à l'inscription : l'utilisateur doit désormais choisir explicitement un
+   forfait depuis `Paramètres → Abonnement`.
+6. **`0006_secure_paid_subscriptions.sql`** — ⚠️ **Correctif de sécurité critique.**
+   Les policies RLS de `0002` autorisaient n'importe quel utilisateur connecté à
+   insérer/modifier directement sa propre ligne `subscriptions`/`transactions` — y
+   compris un forfait payant, avec un `transaction_id` inventé, sans jamais passer
+   par FedaPay. Cette migration restreint l'écriture cliente au seul forfait gratuit
+   (`plan_id = 'free'`, `amount = 0`) ; l'activation d'un forfait payant est
+   désormais **exclusivement** effectuée par le serveur (`service_role`), après
+   vérification réelle du paiement auprès de l'API FedaPay (voir section
+   [Paiements FedaPay](#paiements-fedapay)). Ajoute aussi une contrainte d'unicité
+   sur `transactions.fedapay_transaction_id` pour l'idempotence.
 
-> ⚠️ Exécutez toujours `0001` avant `0002`. Les deux scripts sont idempotents
-> (`IF NOT EXISTS`, `DROP POLICY IF EXISTS`...) : vous pouvez les relancer sans risque.
+> ⚠️ Exécutez les migrations **dans l'ordre**, 0001 puis 0002 puis 0003... Elles sont
+> idempotentes (`IF NOT EXISTS`, `DROP POLICY IF EXISTS`...) : vous pouvez les
+> relancer sans risque.
 
 ## Créer le premier compte SuperAdmin
 
@@ -148,7 +166,7 @@ Tous les emails passent par `POST /api/email/send` (voir `server.ts`), qui utili
 | Bienvenue à l'inscription | `AuthContext.signUp` |
 | Compte vérifié | `AuthContext.adminVerifyUser` (statut `verified`) |
 | Compte rejeté (+ motif) | `AuthContext.adminVerifyUser` (statut `rejected`) |
-| Abonnement confirmé | `subscriptionService.createOrUpgradeSubscription` |
+| Abonnement confirmé | `activatePaidSubscriptionFromTransaction` (`server/app.ts`, appelée par le webhook FedaPay et par `/api/fedapay/verify-transaction/:id`) |
 | Nouvelle demande de renseignements | `inquiryService.submitInquiry` → email au propriétaire |
 | Nouvelle demande de visite | `visitService.requestVisit` → email au propriétaire |
 
@@ -182,11 +200,37 @@ simulées et un bandeau d'avertissement explicite.
 
 ## Paiements FedaPay
 
-Déjà intégré (`server.ts` + `src/services/subscriptions`). Renseignez
-`VITE_FEDAPAY_PUBLIC_KEY` et `FEDAPAY_SECRET_KEY` depuis votre tableau de bord
-[FedaPay](https://fedapay.com). Configurez l'URL de webhook
-`https://votre-domaine.com/api/fedapay/webhook` dans FedaPay pour la confirmation
-automatique des paiements.
+Intégré via le widget **Checkout.js** de FedaPay côté client (`src/services/payments/fedapayCheckout.ts`)
+et vérifié/activé côté serveur (`server/app.ts`). Renseignez :
+- `VITE_FEDAPAY_PUBLIC_KEY` et `FEDAPAY_SECRET_KEY` depuis votre tableau de bord
+  [FedaPay](https://fedapay.com) ;
+- `FEDAPAY_WEBHOOK_SECRET` (Dashboard FedaPay → Webhooks → votre endpoint → "Copier la
+  clé") — **indispensable pour vérifier l'authenticité des notifications reçues**.
+
+Configurez l'URL de webhook `https://votre-domaine.com/api/fedapay/webhook` dans
+FedaPay (événement `transaction.approved` au minimum).
+
+**Comment l'activation d'un abonnement est sécurisée (depuis la migration 0006)** :
+1. Le client ouvre le widget FedaPay avec `custom_metadata: { user_id, plan_id }` —
+   ces informations sont rattachées à la transaction chez FedaPay, pas devinées côté
+   client.
+2. Dès que l'utilisateur valide son paiement Mobile Money, **deux voies indépendantes**
+   peuvent déclencher l'activation, chacune relisant la transaction directement depuis
+   l'API FedaPay avec la clé secrète (jamais sur la foi du navigateur) :
+   - le **webhook** `/api/fedapay/webhook`, avec vérification de signature
+     (`X-FEDAPAY-SIGNATURE`) ;
+   - `/api/fedapay/verify-transaction/:id`, appelé par le navigateur juste après le
+     paiement (utile si le webhook n'est pas encore configuré ou met du temps à
+     arriver).
+3. Les deux voies appellent la même fonction serveur
+   `activatePaidSubscriptionFromTransaction()`, qui vérifie que le montant/devise
+   réellement débité correspond au plan demandé, écrit `subscriptions` +
+   `transactions` avec la clé `service_role` (RLS interdit désormais tout insert
+   client sur un forfait payant), et est idempotente (rejouer le même événement
+   n'active pas deux fois).
+4. En cas de coupure réseau ou de timeout pendant la vérification, le serveur renvoie
+   désormais un statut **« en attente »** honnête plutôt que d'approuver le paiement
+   par défaut — le webhook confirmera l'activation dès sa réception.
 
 ## Gestion des plans par le SuperAdmin
 
@@ -219,29 +263,35 @@ Cette base est fonctionnelle de bout en bout (Supabase, SuperAdmin, plans, email
 Google Analytics, paiements FedaPay), mais quelques points méritent votre attention
 avant d'encaisser vos premiers clients :
 
-1. **Webhook FedaPay → activation automatique de l'abonnement** : le endpoint
-   `/api/fedapay/webhook` accuse actuellement réception sans mettre à jour la table
-   `subscriptions`. À connecter à `subscriptionService.createOrUpgradeSubscription`
-   (avec vérification de signature FedaPay) pour une activation sans intervention
-   manuelle.
-2. **Stockage des fichiers (photos de biens, documents de vérification)** : le bucket
+1. **Stockage des fichiers (photos de biens, documents de vérification)** : le bucket
    Supabase Storage n'est pas créé par les migrations SQL fournies. Créez un bucket
    `properties` (public) et un bucket `verification-documents` (privé) dans
    `Supabase Studio → Storage`, avec des policies adaptées.
-3. **Emails transactionnels Supabase Auth** (confirmation d'inscription, réinitialisation
+2. **Emails transactionnels Supabase Auth** (confirmation d'inscription, réinitialisation
    de mot de passe) : personnalisez leurs templates dans `Supabase Studio →
    Authentication → Email Templates` pour qu'ils soient en français et à l'image de
    LoyerPro.
-4. **Nom de domaine + SSL** : configurez votre domaine chez votre hébergeur (Vercel,
+3. **Nom de domaine + SSL** : configurez votre domaine chez votre hébergeur (Vercel,
    Render, VPS + Caddy/Nginx) et ajoutez-le aux URLs autorisées dans Supabase
    (`Authentication → URL Configuration`).
-5. **Conformité RGPD/local** : bannière de consentement cookies si vous ciblez des
+4. **Conformité RGPD/local** : bannière de consentement cookies si vous ciblez des
    visiteurs européens (Google Analytics dépose des cookies), mentions légales, CGU/CGV.
-6. **Sauvegardes** : activez les sauvegardes automatiques quotidiennes dans
+5. **Sauvegardes** : activez les sauvegardes automatiques quotidiennes dans
    `Supabase Studio → Database → Backups` (disponible à partir du plan payant Supabase).
-7. **Tests de charge / monitoring** : ajoutez un outil de suivi d'erreurs (Sentry) et
+6. **Tests de charge / monitoring** : ajoutez un outil de suivi d'erreurs (Sentry) et
    configurez des alertes sur les échecs de paiement ou d'envoi d'email
    (`email_logs.status = 'failed'`).
-8. **Rôles multi-utilisateurs pour les agences** : le schéma actuel lie chaque bien à un
+7. **Rôles multi-utilisateurs pour les agences** : le schéma actuel lie chaque bien à un
    seul `user_id`. Pour un vrai multi-gestionnaire par agence (mentionné dans le plan
    "Agence Business"), il faudra une table `agency_members` et adapter les policies RLS.
+8. **Testez le paiement FedaPay en sandbox de bout en bout** (webhook configuré +
+   `FEDAPAY_WEBHOOK_SECRET` renseignée) avant de passer en clés `live`, pour confirmer
+   que `activatePaidSubscriptionFromTransaction` active bien l'abonnement et envoie
+   l'email de confirmation.
+
+> ✅ **Corrigé** : le endpoint `/api/fedapay/webhook` était auparavant un stub qui
+> n'activait jamais l'abonnement, et la vérification de paiement "échouait ouvert"
+> (une simple coupure réseau suffisait à valider un paiement jamais effectué). Une
+> faille RLS permettait aussi à tout utilisateur de s'auto-attribuer un forfait payant
+> gratuitement. Les trois problèmes sont corrigés (voir migration `0006` et
+> `server/app.ts` — section [Paiements FedaPay](#paiements-fedapay)).

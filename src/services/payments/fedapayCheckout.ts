@@ -27,6 +27,11 @@ export interface FedaPayCheckoutOptions {
   customerFirstname?: string;
   customerLastname?: string;
   customerPhone?: string;
+  // IMPORTANT : identifie l'utilisateur et le plan visés par ce paiement.
+  // Le serveur (webhook + verify-transaction) lit ces champs directement
+  // depuis la transaction FedaPay (jamais depuis le navigateur) pour savoir
+  // QUEL abonnement activer, de façon infalsifiable côté client.
+  customMetadata: { user_id: string; plan_id: string };
   onApproved: (transactionId: number | string, clientStatus?: string) => void;
   onDismissed?: () => void;
   onError?: (message: string) => void;
@@ -96,6 +101,7 @@ export async function openFedaPayCheckout(opts: FedaPayCheckoutOptions): Promise
       transaction: {
         amount: Math.round(opts.amount),
         description: opts.description,
+        custom_metadata: opts.customMetadata,
       },
       currency: { iso: opts.currency || 'XOF' },
       customer: {
@@ -143,9 +149,12 @@ export async function openFedaPayCheckout(opts: FedaPayCheckoutOptions): Promise
  */
 export async function verifyFedaPayTransaction(transactionId: number | string): Promise<{
   approved: boolean;
+  pending?: boolean;
+  activated?: boolean;
   simulated?: boolean;
   status?: string;
   error?: string;
+  notice?: string;
 }> {
   try {
     const controller = new AbortController();
@@ -160,13 +169,14 @@ export async function verifyFedaPayTransaction(transactionId: number | string): 
     if (!contentType.includes('application/json')) {
       const text = await res.text();
       console.warn('[fedapayCheckout] Réponse non-JSON du serveur (statut ' + res.status + '):', text.slice(0, 120));
-      // Si Vercel ou la passerelle a expiré (504 FUNCTION_INVOCATION_TIMEOUT),
-      // ne pas bloquer l'utilisateur qui vient de régler son abonnement par Mobile Money.
+      // ⚠️ FAIL-CLOSED (correction d'une faille) : on ne renvoie plus
+      // `approved: true` par défaut ici. Le serveur ayant échoué à répondre
+      // correctement, on affiche un statut "en attente" — le webhook FedaPay
+      // confirmera l'activation dès sa réception.
       return {
-        approved: true,
-        simulated: true,
-        status: 'approved',
-        error: `Validation serveur en attente (HTTP ${res.status}). Réf: ${transactionId}`,
+        approved: false,
+        pending: true,
+        error: `Réponse serveur inattendue (HTTP ${res.status}). Réf: ${transactionId}`,
       };
     }
 
@@ -176,23 +186,27 @@ export async function verifyFedaPayTransaction(transactionId: number | string): 
       return { approved: false, error: data?.error || `Erreur HTTP ${res.status}` };
     }
 
-    const tx = data?.['v1/transaction'] || data; // supporte le mode simulation local (objet plat)
-    const status = tx?.status;
-    const isApproved = status === 'approved' || data?.fallback === true || data?.verified === true;
     return {
-      approved: isApproved,
-      status: status || (isApproved ? 'approved' : 'pending'),
-      simulated: Boolean(data?.notice || data?.fallback),
+      approved: Boolean(data?.approved),
+      pending: Boolean(data?.pending),
+      activated: Boolean(data?.activated),
+      status: data?.status,
+      simulated: Boolean(data?.simulated),
+      notice: data?.notice,
     };
   } catch (err: any) {
     console.warn('[fedapayCheckout] Erreur réseau ou timeout vérification:', err?.message);
-    // En cas d'interruption réseau lors du ping de confirmation, ne pas punir le client
+    // ⚠️ FAIL-CLOSED (faille corrigée) : auparavant, une coupure réseau ou un
+    // timeout ici renvoyait `approved: true`, ce qui suffisait à activer un
+    // abonnement payant sans paiement réel (il suffisait de bloquer cette
+    // requête réseau, ex. via les devtools). Le webhook FedaPay confirmera
+    // l'activation dès sa réception ; en attendant, on affiche un statut
+    // "en attente" honnête à l'utilisateur.
     return {
-      approved: true,
-      simulated: true,
-      status: 'approved',
+      approved: false,
+      pending: true,
       error: err?.name === 'AbortError'
-        ? "Délai de vérification serveur dépassé. Votre paiement est conservé."
+        ? "Délai de vérification serveur dépassé. Si le paiement a été débité, il sera confirmé automatiquement d'ici quelques minutes."
         : (err?.message || 'Avertissement réseau'),
     };
   }

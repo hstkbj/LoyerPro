@@ -1,5 +1,4 @@
 import { getSupabase } from '../supabase/client';
-import { emailService } from '../email/emailService';
 import type { SubscriptionPlan, Subscription, Transaction } from '../../types';
 
 export const DEFAULT_PLANS: SubscriptionPlan[] = [
@@ -237,58 +236,57 @@ export const subscriptionService = {
 
     const supabase = getSupabase();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: userId,
-          plan_id: planId,
-          status: 'active',
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          amount: plan.price,
-          transaction_id: fedapayTransactionId || null,
-          payment_gateway: 'fedapay',
-        })
-        .select('*, plan:plan_id(*)')
-        .single();
+      // ------------------------------------------------------------------
+      // FORFAIT GRATUIT : l'utilisateur peut s'auto-attribuer le plan "free"
+      // (policy RLS "Choix du forfait gratuit par l'utilisateur", migration
+      // 0006). C'est le SEUL cas où un insert direct depuis le client reste
+      // autorisé en base.
+      // ------------------------------------------------------------------
+      if (!fedapayTransactionId) {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            status: 'active',
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString(),
+            amount: plan.price,
+            transaction_id: null,
+            payment_gateway: 'system',
+          })
+          .select('*, plan:plan_id(*)')
+          .single();
 
-      if (error) throw error;
-
-      if (fedapayTransactionId) {
-        await supabase.from('transactions').insert({
-          user_id: userId,
-          subscription_id: data.id,
-          fedapay_transaction_id: fedapayTransactionId,
-          amount: plan.price,
-          currency: 'XOF',
-          status: 'approved',
-          payment_method: paymentMethod || 'FedaPay Mobile Money',
-        });
+        if (error) throw error;
+        return data as Subscription;
       }
 
-      // Email de confirmation d'abonnement - non bloquant
-      supabase
-        .from('profiles')
-        .select('email, full_name')
-        .eq('id', userId)
-        .single()
-        .then(
-          ({ data: prof }) => {
-            if (prof?.email) {
-              emailService.sendSubscriptionConfirmed(prof.email, {
-                fullName: prof.full_name,
-                planName: plan.name,
-                amount: plan.price,
-                currency: plan.currency,
-                interval: plan.interval,
-                transactionId: fedapayTransactionId,
-              }).catch(() => {});
-            }
-          },
-          () => {}
-        );
+      // ------------------------------------------------------------------
+      // FORFAIT PAYANT : depuis la migration 0006, RLS interdit tout insert
+      // direct côté client dans "subscriptions"/"transactions" pour un plan
+      // payant (faille de sécurité corrigée : un utilisateur pouvait
+      // auparavant s'octroyer n'importe quel forfait gratuitement avec un
+      // faux transaction_id). L'activation réelle a déjà été effectuée
+      // côté serveur, avec la clé service_role, par
+      // /api/fedapay/verify-transaction/:id ou par le webhook FedaPay — les
+      // deux vérifient le paiement directement auprès de l'API FedaPay avant
+      // d'écrire quoi que ce soit. On se contente ici d'attendre que cette
+      // ligne apparaisse (délai réseau/replication éventuel).
+      // ------------------------------------------------------------------
+      const maxAttempts = 8;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const current = await this.getUserSubscription(userId);
+        if (current && current.plan_id === planId && current.transaction_id === fedapayTransactionId) {
+          return current;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
 
-      return data as Subscription;
+      throw new Error(
+        `Le paiement a été reçu (réf. ${fedapayTransactionId}) mais l'activation de l'abonnement n'a pas encore été confirmée en base. ` +
+        "Rechargez la page dans une minute : elle se met à jour automatiquement dès réception de la confirmation FedaPay (webhook)."
+      );
     }
 
     const items = getLocalSubs();

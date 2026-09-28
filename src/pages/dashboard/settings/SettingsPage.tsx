@@ -133,6 +133,14 @@ export function SettingsPage() {
     }
 
     // Forfait payant : on ouvre le vrai module de paiement FedaPay.
+    // custom_metadata (user_id/plan_id) est lu directement par le serveur
+    // (webhook + verify-transaction) depuis la transaction FedaPay elle-même
+    // pour savoir quel abonnement activer — jamais depuis ce code client.
+    if (!profile?.id) {
+      setPaymentError('Votre session semble expirée. Reconnectez-vous puis réessayez.');
+      return;
+    }
+
     setPayingPlanId(rawPlan.id);
     openFedaPayCheckout({
       amount: rawPlan.price,
@@ -142,24 +150,37 @@ export function SettingsPage() {
       customerFirstname: profile?.full_name?.split(' ')[0],
       customerLastname: profile?.full_name?.split(' ').slice(1).join(' ') || profile?.full_name,
       customerPhone: profile?.phone,
-      onApproved: async (transactionId, clientStatus) => {
-        setPaymentNotice('Paiement validé par FedaPay ! Activation de votre abonnement...');
+      customMetadata: { user_id: profile.id, plan_id: rawPlan.id },
+      onApproved: async (transactionId) => {
+        setPaymentNotice('Paiement reçu par FedaPay, vérification en cours...');
         const verification = await verifyFedaPayTransaction(transactionId);
-        if (!verification.approved && clientStatus !== 'approved') {
+
+        if (!verification.approved) {
           setPayingPlanId(null);
           setPaymentNotice('');
-          setPaymentError(
-            verification.error ||
-              "Le paiement n'a pas pu être confirmé. Si un montant a été débité, contactez le support avec votre référence de transaction."
-          );
+          if (verification.pending) {
+            // Coupure réseau/timeout momentané : on ne bloque pas
+            // l'utilisateur, le webhook FedaPay confirmera l'activation
+            // automatiquement dès sa réception.
+            setPaymentNotice(
+              `Paiement en cours de confirmation (réf. ${transactionId}). Votre abonnement s'activera automatiquement d'ici quelques instants — rechargez la page dans une minute.`
+            );
+          } else {
+            setPaymentError(
+              verification.error ||
+                "Le paiement n'a pas pu être confirmé. Si un montant a été débité, contactez le support avec votre référence de transaction."
+            );
+          }
           return;
         }
+
         try {
           await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, String(transactionId));
           await refreshSubscription();
           setPaymentNotice(`🎉 Félicitations ! Votre forfait ${rawPlan.name} est activé avec succès.`);
         } catch (err: any) {
           console.error('[SettingsPage] upgradeSubscription error:', err);
+          setPaymentNotice('');
           setPaymentError(err?.message || "Le paiement a été confirmé mais l'activation de l'abonnement a rencontré un problème. Rechargez la page.");
         } finally {
           setPayingPlanId(null);

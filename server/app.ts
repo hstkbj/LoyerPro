@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleAuth } from 'google-auth-library';
@@ -79,6 +80,185 @@ function getTransporter() {
   });
 }
 
+// ------------------------------------------------------------------
+// FedaPay : vérification de signature de webhook (X-FEDAPAY-SIGNATURE)
+// Format de l'en-tête : "t=<timestamp>,s=<hmac_sha256_hex>"
+// signature attendue = HMAC-SHA256(secret, `${timestamp}.${rawPayload}`)
+// (même schéma que la librairie officielle "fedapay" côté Node/PHP).
+// ------------------------------------------------------------------
+function verifyFedaPayWebhookSignature(rawBody: string, header: string | undefined, secret: string, toleranceSec = 300): boolean {
+  if (!header || typeof header !== 'string') return false;
+
+  const parts = header.split(',').reduce(
+    (acc, item) => {
+      const [k, v] = item.split('=');
+      if (k === 't') acc.timestamp = parseInt(v, 10);
+      if (k === 's') acc.signatures.push(v);
+      return acc;
+    },
+    { timestamp: -1, signatures: [] as string[] }
+  );
+
+  if (parts.timestamp === -1 || parts.signatures.length === 0) return false;
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(`${parts.timestamp}.${rawBody}`, 'utf8')
+    .digest('hex');
+
+  const matches = parts.signatures.some((sig) => {
+    try {
+      return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+    } catch {
+      return false;
+    }
+  });
+
+  if (!matches) return false;
+
+  const age = Math.floor(Date.now() / 1000) - parts.timestamp;
+  if (toleranceSec > 0 && age > toleranceSec) return false; // anti-rejeu
+
+  return true;
+}
+
+// ------------------------------------------------------------------
+// Active un abonnement payant en base UNIQUEMENT après vérification réelle
+// du statut de la transaction auprès de l'API FedaPay (jamais sur la seule
+// foi du navigateur ou du corps du webhook). Idempotent : si la transaction
+// a déjà été traitée (contrainte unique sur fedapay_transaction_id), on ne
+// double-active pas. Utilise la clé service_role (contourne RLS) : c'est le
+// SEUL chemin autorisé à écrire une ligne "subscriptions"/"transactions"
+// payante, RLS l'interdisant désormais depuis le client (migration 0006).
+// ------------------------------------------------------------------
+async function activatePaidSubscriptionFromTransaction(tx: any): Promise<{
+  activated: boolean;
+  alreadyProcessed?: boolean;
+  reason?: string;
+}> {
+  if (!tx || tx.status !== 'approved') {
+    return { activated: false, reason: 'transaction_not_approved' };
+  }
+
+  const meta = tx.custom_metadata || {};
+  const userId: string | undefined = meta.user_id;
+  const planId: string | undefined = meta.plan_id;
+
+  if (!userId || !planId) {
+    console.error('[FedaPay] Transaction approuvée sans custom_metadata.user_id/plan_id exploitable :', tx.id);
+    return { activated: false, reason: 'missing_metadata' };
+  }
+
+  const admin = getSupabaseAdmin();
+  if (!admin) {
+    console.warn('[FedaPay] Supabase (service_role) non configuré : impossible d\'activer l\'abonnement automatiquement.');
+    return { activated: false, reason: 'supabase_not_configured' };
+  }
+
+  // Idempotence : ce paiement a-t-il déjà été traité (webhook + fallback verify
+  // appelés tous les deux, ou webhook relivré par FedaPay) ?
+  const { data: existingTx } = await admin
+    .from('transactions')
+    .select('id')
+    .eq('fedapay_transaction_id', String(tx.id))
+    .maybeSingle();
+  if (existingTx) {
+    return { activated: true, alreadyProcessed: true };
+  }
+
+  const { data: plan, error: planErr } = await admin
+    .from('subscription_plans')
+    .select('*')
+    .eq('id', planId)
+    .maybeSingle();
+
+  if (planErr || !plan) {
+    console.error('[FedaPay] Plan inconnu référencé par la transaction:', planId);
+    return { activated: false, reason: 'unknown_plan' };
+  }
+
+  // Sécurité anti-fraude : le montant réellement débité par FedaPay doit
+  // correspondre au prix du plan (toujours facturé en XOF, voir fedapayCheckout.ts).
+  const expectedAmount = Math.round(Number(plan.price));
+  const gotAmount = Math.round(Number(tx.amount));
+  const gotCurrency = tx.currency?.iso || tx.currency || 'XOF';
+  const expectedCurrency = plan.currency || 'XOF';
+
+  if (gotAmount !== expectedAmount || gotCurrency !== expectedCurrency) {
+    console.error('[FedaPay] Montant/devise de la transaction ne correspond pas au plan demandé :', {
+      transactionId: tx.id, planId, expectedAmount, gotAmount, expectedCurrency, gotCurrency,
+    });
+    return { activated: false, reason: 'amount_mismatch' };
+  }
+
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  const { data: subscription, error: subErr } = await admin
+    .from('subscriptions')
+    .insert({
+      user_id: userId,
+      plan_id: planId,
+      status: 'active',
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      amount: plan.price,
+      transaction_id: String(tx.id),
+      payment_gateway: 'fedapay',
+    })
+    .select('*')
+    .single();
+
+  if (subErr) {
+    console.error('[FedaPay] Échec insertion subscription:', subErr.message);
+    return { activated: false, reason: 'db_error_subscription' };
+  }
+
+  const { error: txErr } = await admin.from('transactions').insert({
+    user_id: userId,
+    subscription_id: subscription.id,
+    fedapay_transaction_id: String(tx.id),
+    amount: plan.price,
+    currency: expectedCurrency,
+    status: 'approved',
+    payment_method: 'FedaPay Mobile Money',
+  });
+  if (txErr) {
+    // La contrainte unique peut se déclencher en cas de course entre webhook
+    // et vérification manuelle : ce n'est pas une erreur fonctionnelle.
+    console.warn('[FedaPay] Insertion transaction (probable doublon idempotent):', txErr.message);
+  }
+
+  // Email de confirmation — non bloquant, ne doit jamais faire échouer l'activation.
+  try {
+    const { data: prof } = await admin.from('profiles').select('email, full_name').eq('id', userId).single();
+    if (prof?.email) {
+      const { subject, html } = EMAIL_TEMPLATES.subscription_confirmed({
+        fullName: prof.full_name,
+        planName: plan.name,
+        amount: plan.price,
+        currency: plan.currency,
+        interval: plan.interval,
+        transactionId: tx.id,
+      });
+      const transporter = getTransporter();
+      const fromEmail = process.env.EMAIL_FROM || 'no-reply@loyerpro.bj';
+      const fromName = process.env.EMAIL_FROM_NAME || 'LoyerPro';
+      if (transporter) {
+        await transporter.sendMail({ from: `"${fromName}" <${fromEmail}>`, to: prof.email, subject, html });
+        await logEmail(prof.email, subject, 'subscription_confirmed', 'sent');
+      } else {
+        await logEmail(prof.email, subject, 'subscription_confirmed', 'simulated');
+      }
+    }
+  } catch (emailErr: any) {
+    console.warn('[FedaPay] Email de confirmation non envoyé:', emailErr?.message);
+  }
+
+  return { activated: true };
+}
+
 async function getGoogleAccessToken(): Promise<string | null> {
   const clientEmail = process.env.GA_CLIENT_EMAIL;
   const privateKey = process.env.GA_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -121,7 +301,16 @@ function simulatedAnalytics(days: number) {
 
 export function createApp() {
   const app = express();
-  app.use(express.json());
+  // On conserve le corps brut (rawBody) pour pouvoir vérifier la signature
+  // X-FEDAPAY-SIGNATURE du webhook, qui doit être calculée sur le JSON exact
+  // envoyé par FedaPay et non sur une re-sérialisation.
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf.toString('utf8');
+      },
+    })
+  );
 
   app.get('/api/health', (_req, res) => {
     res.json({
@@ -204,13 +393,19 @@ export function createApp() {
       const { secret, isConfigured, baseUrl } = getFedaPayConfig();
 
       if (!isConfigured) {
+        // Mode démo uniquement (aucune clé FedaPay réelle configurée). On ne
+        // fait QUE renvoyer un statut simulé pour ne pas bloquer les tests
+        // locaux : ceci n'active jamais un abonnement payant en base réelle,
+        // puisque RLS interdit désormais tout insert direct côté client pour
+        // un forfait payant (migration 0006) et qu'activatePaidSubscriptionFromTransaction
+        // n'est appelée que plus bas, jamais dans cette branche.
         return res.json({
           id,
           status: 'approved',
-          amount: 15000,
-          currency: 'XOF',
           verified: true,
-          notice: 'FEDAPAY_SECRET_KEY non configurée en direct : validation automatique acceptée.',
+          approved: true,
+          simulated: true,
+          notice: "FEDAPAY_SECRET_KEY non configurée : mode simulation (aucun paiement réel vérifié, aucun abonnement activé en base).",
         });
       }
 
@@ -228,37 +423,136 @@ export function createApp() {
         });
         clearTimeout(timeout);
 
-        const data = await response.json().catch(() => ({}));
-        return res.status(response.status).json(data);
+        const data = await response.json().catch(() => null);
+        const tx = data?.['v1/transaction'] || data;
+
+        if (!response.ok || !tx?.status) {
+          return res.status(200).json({
+            id,
+            approved: false,
+            pending: true,
+            notice: "Impossible de confirmer la transaction pour le moment auprès de FedaPay. Réessayez dans quelques instants.",
+          });
+        }
+
+        const isApproved = tx.status === 'approved';
+        let activation: { activated: boolean; alreadyProcessed?: boolean; reason?: string } | null = null;
+
+        if (isApproved) {
+          // ⚠️ On ne fait JAMAIS confiance à un statut envoyé par le
+          // navigateur : on vient de relire la transaction directement
+          // depuis l'API FedaPay avec la clé secrète serveur, c'est cette
+          // valeur (tx.status) qui déclenche l'activation, pas celle reçue
+          // du client. C'est ce même appel qui active réellement l'abonnement
+          // en base (au cas où le webhook n'est pas configuré ou pas encore arrivé).
+          activation = await activatePaidSubscriptionFromTransaction(tx);
+        }
+
+        return res.json({
+          id,
+          status: tx.status,
+          verified: true,
+          approved: isApproved,
+          activated: activation?.activated || false,
+          notice: isApproved
+            ? undefined
+            : `Statut FedaPay actuel : ${tx.status}. L'abonnement ne sera activé qu'après approbation.`,
+        });
       } catch (fetchErr: any) {
         clearTimeout(timeout);
         console.warn('[FedaPay] verify network/timeout warning:', fetchErr?.message);
-        // Fallback gracieux si l'appel externe à FedaPay timeout ou a un souci réseau passager
-        return res.json({
+        // ⚠️ FAIL-CLOSED (correction d'une faille) : auparavant, toute coupure
+        // réseau ou timeout renvoyait `approved: true`, ce qui permettait de
+        // valider un paiement jamais effectué en bloquant simplement cette
+        // requête (mode avion, devtools, bloqueur...). On renvoie désormais un
+        // statut "en attente" explicite : le webhook FedaPay confirmera
+        // l'activation dès sa réception, et l'utilisateur peut réessayer.
+        return res.status(200).json({
           id,
-          status: 'approved',
-          verified: false,
-          fallback: true,
+          approved: false,
+          pending: true,
           notice: fetchErr?.name === 'AbortError'
-            ? "Délai d'interrogation FedaPay dépassé (passerelle occupée) : transaction approuvée par sécurité."
-            : 'Contrôle réseau FedaPay différé : transaction acceptée.',
+            ? "Délai d'interrogation FedaPay dépassé. Si le paiement a bien été débité, il sera confirmé automatiquement d'ici quelques minutes (webhook FedaPay)."
+            : "Contrôle réseau FedaPay indisponible pour le moment. Si le paiement a bien été débité, il sera confirmé automatiquement dès réception du webhook FedaPay.",
         });
       }
     } catch (error: any) {
       console.error('FedaPay verify error:', error);
       return res.status(200).json({
         id: req.params?.id,
-        status: 'approved',
-        fallback: true,
+        approved: false,
+        pending: true,
         error: error.message || 'Erreur de vérification FedaPay',
       });
     }
   });
 
-  app.post('/api/fedapay/webhook', (req, res) => {
-    const event = req.body;
-    console.log('FedaPay webhook received:', event?.name || 'event', event?.id);
-    res.status(200).json({ received: true });
+  app.post('/api/fedapay/webhook', async (req, res) => {
+    try {
+      const webhookSecret = (process.env.FEDAPAY_WEBHOOK_SECRET || '').trim();
+      const sigHeader = req.headers['x-fedapay-signature'] as string | undefined;
+      const rawBody = (req as any).rawBody || JSON.stringify(req.body || {});
+
+      if (webhookSecret) {
+        const validSignature = verifyFedaPayWebhookSignature(rawBody, sigHeader, webhookSecret);
+        if (!validSignature) {
+          console.warn('[FedaPay webhook] Signature invalide ou absente : requête rejetée.');
+          return res.status(400).json({ error: 'Signature invalide' });
+        }
+      } else {
+        // Toléré pour ne jamais bloquer un environnement de démo/test sans
+        // configuration complète, mais ce cas doit être corrigé avant la mise
+        // en production (voir README : configurez FEDAPAY_WEBHOOK_SECRET).
+        console.warn('[FedaPay webhook] FEDAPAY_WEBHOOK_SECRET non configurée : signature NON vérifiée (à corriger avant la mise en ligne).');
+      }
+
+      const event = req.body || {};
+      const eventName: string = event?.name || event?.type || '';
+      console.log('[FedaPay webhook] événement reçu:', eventName, event?.id);
+
+      // Le format exact du payload peut varier ; on essaie plusieurs chemins
+      // usuels pour retrouver l'identifiant de la transaction concernée.
+      const txId =
+        event?.entity?.id ??
+        event?.data?.object?.id ??
+        (event?.object === 'transaction' ? event?.id : undefined) ??
+        event?.transaction_id;
+
+      if (!eventName.startsWith('transaction.') || !txId) {
+        return res.status(200).json({ received: true });
+      }
+
+      const { secret, isConfigured, baseUrl } = getFedaPayConfig();
+      if (!isConfigured) {
+        console.warn('[FedaPay webhook] FEDAPAY_SECRET_KEY non configurée : impossible de vérifier la transaction auprès de FedaPay.');
+        return res.status(200).json({ received: true });
+      }
+
+      // ⚠️ On ne fait jamais confiance au statut présent dans le corps du
+      // webhook lui-même : on relit toujours la transaction directement
+      // depuis l'API FedaPay avec la clé secrète serveur avant d'activer quoi
+      // que ce soit (recommandation officielle FedaPay).
+      const txResponse = await fetch(`${baseUrl}/v1/transactions/${txId}`, {
+        headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+      });
+      const txData = await txResponse.json().catch(() => null);
+      const tx = txData?.['v1/transaction'] || txData;
+
+      if (!txResponse.ok || !tx) {
+        console.error('[FedaPay webhook] Impossible de récupérer la transaction', txId);
+        return res.status(200).json({ received: true });
+      }
+
+      const result = await activatePaidSubscriptionFromTransaction(tx);
+      console.log('[FedaPay webhook] résultat activation:', result);
+      return res.status(200).json({ received: true, ...result });
+    } catch (error: any) {
+      console.error('[FedaPay webhook] erreur:', error);
+      // On répond 200 pour éviter des retentatives FedaPay sur une erreur qui
+      // ne remet pas en cause la validité de l'événement lui-même ; l'erreur
+      // reste journalisée côté serveur pour investigation.
+      return res.status(200).json({ received: true, error: error.message });
+    }
   });
 
   app.post('/api/email/send', async (req, res) => {
