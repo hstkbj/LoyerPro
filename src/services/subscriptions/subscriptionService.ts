@@ -274,18 +274,18 @@ export const subscriptionService = {
       // d'écrire quoi que ce soit. On se contente ici d'attendre que cette
       // ligne apparaisse (délai réseau/replication éventuel).
       // ------------------------------------------------------------------
-      const maxAttempts = 8;
+      const maxAttempts = 20; // ~20s au total (1s entre chaque essai)
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const current = await this.getUserSubscription(userId);
         if (current && current.plan_id === planId && current.transaction_id === fedapayTransactionId) {
           return current;
         }
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
       throw new Error(
-        `Le paiement a été reçu (réf. ${fedapayTransactionId}) mais l'activation de l'abonnement n'a pas encore été confirmée en base. ` +
-        "Rechargez la page dans une minute : elle se met à jour automatiquement dès réception de la confirmation FedaPay (webhook)."
+        `Le paiement a bien été reçu par FedaPay (réf. ${fedapayTransactionId}) et est en cours d'activation. ` +
+        "Rechargez la page dans une minute : elle affichera automatiquement votre nouveau forfait dès que l'activation sera confirmée en base."
       );
     }
 
