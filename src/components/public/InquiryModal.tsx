@@ -69,7 +69,7 @@ export function InquiryModal({ isOpen, onClose, property }: InquiryModalProps) {
     >
       {success ? (
         <div className="py-6 text-center space-y-3">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <h3 className="text-base font-semibold text-slate-900">

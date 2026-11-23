@@ -1,3 +1,4 @@
+import { Seo } from '../../components/seo/Seo';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { propertyService } from '../../services/properties/propertyService';
@@ -90,6 +91,8 @@ export function PropertyDetailPage() {
   const isVerified = property.owner_verified || property.owner?.is_verified || property.owner?.verification_status === 'verified';
 
   return (
+    <>
+      <Seo title={`${property.title} – ${property.city}`} description={`${property.title} à ${property.city}. ${(property.description || '').slice(0, 140)}`} path={`/properties/${property.slug || property.id}`} image={property.photos?.[0]?.startsWith("http") ? property.photos[0] : undefined} />
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* Back button */}
       <div>
@@ -112,7 +115,8 @@ export function PropertyDetailPage() {
               {currentPhoto ? (
                 <img
                   src={currentPhoto}
-                  alt={property.title}
+                  alt={`${property.title} – photo principale`}
+                  decoding="async"
                   className="h-full w-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -128,7 +132,7 @@ export function PropertyDetailPage() {
                   {property.type}
                 </Badge>
                 {isVerified && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-600 text-white shadow-xs">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     <span>Bailleur Certifié CNI</span>
                   </span>
@@ -165,7 +169,7 @@ export function PropertyDetailPage() {
                       selectedPhotoIndex === idx ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={url} alt={`Vue ${idx + 1}`} className="h-full w-full object-cover" />
+                    <img src={url} alt={`${property.title} – photo ${idx + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -214,7 +218,7 @@ export function PropertyDetailPage() {
                 </div>
               )}
               {property.deposit_months && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 border border-brand-200 font-semibold">
                   <span>Caution : {property.deposit_months} mois</span>
                 </div>
               )}
@@ -278,7 +282,7 @@ export function PropertyDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 text-xs">
                 {property.amenities.map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-slate-700">
-                    <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <Check className="h-3.5 w-3.5 text-brand-600 shrink-0" />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -320,7 +324,7 @@ export function PropertyDetailPage() {
                 onClick={() => setVisitModalOpen(true)}
                 variant="primary"
                 size="lg"
-                className="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                className="w-full justify-center bg-brand-600 hover:bg-brand-700 text-white font-bold"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Demander une visite
@@ -338,9 +342,9 @@ export function PropertyDetailPage() {
 
               <button
                 onClick={handleShareWhatsApp}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-200"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors border border-brand-200"
               >
-                <Share2 className="h-4 w-4 text-emerald-600" />
+                <Share2 className="h-4 w-4 text-brand-600" />
                 Partager cette chambre sur WhatsApp
               </button>
             </div>
@@ -349,7 +353,7 @@ export function PropertyDetailPage() {
             <div className="pt-4 border-t border-slate-100 space-y-3">
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <ShieldCheck className="h-4 w-4 text-brand-600 shrink-0" />
                   <span>
                     {property.owner?.agency_name || property.owner?.full_name || 'Bailleur vérifié'}
                   </span>
@@ -381,5 +385,6 @@ export function PropertyDetailPage() {
         property={property}
       />
     </div>
+    </>
   );
 }

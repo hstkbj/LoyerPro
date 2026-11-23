@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { compressImageToDataUrl } from '../../lib/imageCompress';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGeo } from '../../contexts/GeoContext';
@@ -17,6 +18,12 @@ import {
   FileText,
   MailCheck,
 } from 'lucide-react';
+
+import { Logo } from '../../components/ui/Logo';
+import { Honeypot } from '../../components/ui/Honeypot';
+import { Seo } from '../../components/seo/Seo';
+import { checkSpam, createSpamGuard, recordSubmission } from '../../lib/antiSpam';
+import * as v from '../../lib/validation';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -46,6 +53,9 @@ export function RegisterPage() {
   const [city, setCity] = useState(currentCountry.cities[0] || 'Abidjan');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const [fe, setFe] = useState<v.Errors<'agencyName' | 'fullName' | 'phone' | 'email' | 'password'>>({});
+  const guard = useMemo(() => createSpamGuard(), []);
 
   // Document verification states
   const [docType, setDocType] = useState<'cni' | 'passport' | 'rccm'>('cni');
@@ -64,20 +74,19 @@ export function RegisterPage() {
     }
 
     setUploadError('');
-    const reader = new FileReader();
-    reader.onload = () => {
-      const resultStr = reader.result as string;
-      const newDoc: VerificationDocument = {
-        id: 'doc_' + Math.random().toString(36).substring(2, 9),
-        document_type: customType || docType,
-        name: file.name,
-        file_url: resultStr,
-        uploaded_at: new Date().toISOString(),
-        status: 'pending',
-      };
-      setUploadedDocs((prev) => [...prev, newDoc]);
-    };
-    reader.readAsDataURL(file);
+    compressImageToDataUrl(file, { maxSize: 1800, quality: 0.8 })
+      .then((resultStr) => {
+        const newDoc: VerificationDocument = {
+          id: 'doc_' + Math.random().toString(36).substring(2, 9),
+          document_type: customType || docType,
+          name: file.name,
+          file_url: resultStr,
+          uploaded_at: new Date().toISOString(),
+          status: 'pending',
+        };
+        setUploadedDocs((prev) => [...prev, newDoc]);
+      })
+      .catch(() => setUploadError('Impossible de lire ce fichier. Essayez une autre image ou un PDF.'));
   };
 
   const handleRemoveDoc = (id: string) => {
@@ -86,18 +95,22 @@ export function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !phone || !email || !password) {
-      setError('Veuillez renseigner tous les champs obligatoires.');
+    const errs = v.compact({
+      agencyName: role === 'agency' ? v.required(agencyName, "Le nom de l'agence") : '',
+      fullName: v.fullName(fullName),
+      phone: v.phone(phone),
+      email: v.email(email),
+      password: v.password(password),
+    });
+    setFe(errs);
+    if (!v.isValid(errs)) {
+      setError('Certains champs sont à corriger.');
       return;
     }
 
-    if (role === 'agency' && !agencyName) {
-      setError("Le nom de l'agence immobilière est obligatoire.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Le mot de passe doit comporter au moins 6 caractères.');
+    const spam = checkSpam({ guard, honeypotValue: honeypot, formKey: 'register', maxPerWindow: 3 });
+    if (!spam.ok) {
+      if (!spam.silent) setError(spam.message);
       return;
     }
 
@@ -123,6 +136,7 @@ export function RegisterPage() {
 
     setLoading(false);
 
+    if (!res.error) recordSubmission('register');
     if (res.error) {
       setError(res.error);
     } else if (res.requiresEmailConfirmation) {
@@ -138,8 +152,8 @@ export function RegisterPage() {
     return (
       <div className="min-h-[85vh] flex flex-col justify-center items-center py-12 px-4 bg-slate-50 text-center">
         <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xs p-8 space-y-4">
-          <div className="mx-auto h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center">
-            <MailCheck className="h-7 w-7 text-emerald-600" />
+          <div className="mx-auto h-14 w-14 rounded-full bg-brand-100 flex items-center justify-center">
+            <MailCheck className="h-7 w-7 text-brand-600" />
           </div>
           <h1 className="text-lg font-bold text-slate-900">Vérifiez votre boîte mail</h1>
           <p className="text-sm text-slate-600">
@@ -147,7 +161,7 @@ export function RegisterPage() {
             compte, puis connectez-vous.
           </p>
           {selectedPlan && (
-            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
+            <p className="text-xs text-brand-700 bg-brand-50 border border-brand-200 rounded-lg p-2">
               Une fois connecté(e), vous pourrez activer et régler le forfait que vous avez choisi depuis
               Paramètres → Abonnement.
             </p>
@@ -165,33 +179,30 @@ export function RegisterPage() {
 
   return (
     <div className="min-h-[85vh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
+      <Seo title="Créer un compte bailleur" path="/register" noindex />
       <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center space-y-2">
-        <Link to="/" className="inline-flex items-center gap-2 mb-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-extrabold text-slate-900">
-            Loyer<span className="text-emerald-600">Pro</span>
-          </span>
+        <Link to="/" className="mb-2 inline-flex" aria-label="LoyerPro, retour à l'accueil">
+          <Logo />
         </Link>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
           Enregistrement Bailleur & Agence
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
-          Validation par audit documentaire sous 24h pour garantir la sécurité et la confiance des locataires.
+          Votre pièce d’identité est examinée par notre équipe avant validation, pour garantir la sécurité et la confiance des locataires.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-md">
           {error && (
-            <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+            <div role="alert" className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
+            <Honeypot value={honeypot} onChange={setHoneypot} />
             {/* Account Type Selector */}
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -226,6 +237,7 @@ export function RegisterPage() {
             {role === 'agency' && (
               <Input
                 label="Raison sociale de l'Agence"
+  error={fe.agencyName}
                 required
                 placeholder="Ex: Agence Immobilière Horizon"
                 value={agencyName}
@@ -235,6 +247,7 @@ export function RegisterPage() {
 
             <Input
               label="Nom & Prénom du titulaire"
+ autoComplete="name" error={fe.fullName}
               required
               placeholder="Ex: Jean-Marc Kouassi"
               value={fullName}
@@ -285,6 +298,7 @@ export function RegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Téléphone (WhatsApp)"
+ autoComplete="tel" inputMode="tel" error={fe.phone}
                 required
                 type="tel"
                 placeholder="Ex: +225 07 00 00 00"
@@ -293,6 +307,7 @@ export function RegisterPage() {
               />
               <Input
                 label="Adresse Email"
+ autoComplete="email" inputMode="email" error={fe.email}
                 type="email"
                 required
                 placeholder="contact@bailleur.com"
@@ -303,9 +318,10 @@ export function RegisterPage() {
 
             <Input
               label="Mot de passe"
+ autoComplete="new-password" error={fe.password}
               type="password"
               required
-              placeholder="Au moins 6 caractères"
+              placeholder="8 caractères minimum, lettres et chiffres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -314,7 +330,7 @@ export function RegisterPage() {
             <div className="pt-3 border-t border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                  <ShieldCheck className="h-5 w-5 text-brand-600" />
                   <div>
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
                       Validation d'Identité & Accréditation (Obligatoire)
@@ -394,12 +410,12 @@ export function RegisterPage() {
                       {uploadedDocs.map((doc) => (
                         <div
                           key={doc.id}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200 text-xs"
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-brand-50/60 border border-brand-200 text-xs"
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <FileCheck className="h-4 w-4 text-brand-600 shrink-0" />
                             <span className="font-semibold text-slate-900 truncate">{doc.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-emerald-800 border border-emerald-300 uppercase font-mono">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-brand-800 border border-brand-300 uppercase font-mono">
                               {doc.document_type}
                             </span>
                           </div>

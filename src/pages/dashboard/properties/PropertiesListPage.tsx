@@ -152,6 +152,7 @@ export function PropertiesListPage() {
                     <img
                       src={property.photos[0]}
                       alt={property.title}
+                      loading="lazy"
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -200,7 +201,7 @@ export function PropertiesListPage() {
                       onClick={() => handleTogglePublish(property)}
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
                         property.is_published
-                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          ? 'bg-brand-50 text-brand-700 hover:bg-brand-100'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                       title={property.is_published ? 'Cliquez pour dépublier' : 'Cliquez pour publier'}

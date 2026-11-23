@@ -141,7 +141,7 @@ export function TenantsListPage() {
                         href={`https://wa.me/${tenant.phone.replace(/[^0-9]/g, '')}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-emerald-600 hover:text-emerald-700 ml-1"
+                        className="text-brand-600 hover:text-brand-700 ml-1"
                         title="Ouvrir WhatsApp"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />

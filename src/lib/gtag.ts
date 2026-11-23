@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent } from './consent';
+
 // LoyerPro - Intégration Google Analytics 4 (gtag.js)
 // Le script gtag.js n'est chargé que si VITE_GA_MEASUREMENT_ID est défini,
 // afin de ne jamais casser l'application en son absence (dev, self-host...).
@@ -20,6 +22,8 @@ export function initGoogleAnalytics() {
   if (initialized || typeof window === 'undefined') return;
   const measurementId = getGaMeasurementId();
   if (!measurementId) return;
+  // Aucun traceur Google tant que le visiteur n'a pas accepté (bandeau cookies).
+  if (!hasAnalyticsConsent()) return;
 
   initialized = true;
   window.dataLayer = window.dataLayer || [];

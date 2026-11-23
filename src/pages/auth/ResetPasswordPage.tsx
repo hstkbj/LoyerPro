@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { getSupabase } from '../../services/supabase/client';
-import { Building2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Logo } from '../../components/ui/Logo';
+import { Honeypot } from '../../components/ui/Honeypot';
+import { Seo } from '../../components/seo/Seo';
+import { checkSpam, createSpamGuard } from '../../lib/antiSpam';
+import * as v from '../../lib/validation';
 
 export function ResetPasswordPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const guard = useMemo(() => createSpamGuard(), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const err = v.email(email);
+    setEmailError(err);
+    if (err) return;
+    const spam = checkSpam({ guard, honeypotValue: honeypot, formKey: 'reset', maxPerWindow: 3 });
+    if (!spam.ok) {
+      if (spam.silent) setSent(true);
+      else setError(spam.message);
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -21,7 +37,7 @@ export function ResetPasswordPage() {
     const supabase = getSupabase();
     if (supabase) {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `https://loyerpro.vercel.app/auth/login`,
+        redirectTo: `${window.location.origin}/login`,
       });
       if (error) {
         setError(error.message);
@@ -35,15 +51,11 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-[80vh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Seo title="Mot de passe oublié" path="/reset-password" noindex />
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link to="/" className="inline-flex items-center gap-2 mb-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <span className="text-xl font-bold text-slate-900">
-            Loyer<span className="text-emerald-600">Pro</span>
-          </span>
+        <Link to="/" className="mb-4 inline-flex" aria-label="LoyerPro, retour à l'accueil">
+          <Logo />
         </Link>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">
           Récupération de mot de passe
@@ -57,7 +69,7 @@ export function ResetPasswordPage() {
         <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-sm">
           {sent ? (
             <div className="text-center space-y-4">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
               <h3 className="text-sm font-semibold text-slate-900">Email envoyé</h3>
@@ -75,9 +87,10 @@ export function ResetPasswordPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="relative space-y-4">
+              <Honeypot value={honeypot} onChange={setHoneypot} />
               {error && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                <div role="alert" className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
                   {error}
                 </div>
               )}
@@ -86,6 +99,8 @@ export function ResetPasswordPage() {
                 label="Adresse Email"
                 type="email"
                 required
+                autoComplete="email"
+                error={emailError}
                 placeholder="votre-email@exemple.bj"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

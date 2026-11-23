@@ -1,3 +1,4 @@
+import { Seo } from '../../components/seo/Seo';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
@@ -45,6 +46,8 @@ export function PricingPage() {
   };
 
   return (
+    <>
+      <Seo title="Tarifs" description="Découvrez les forfaits LoyerPro pour bailleurs et agences : gestion des biens, contrats, loyers et quittances. Paiement par Mobile Money ou carte." path="/pricing" />
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 space-y-16">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -53,9 +56,9 @@ export function PricingPage() {
             onClick={() => setLocationModalOpen(true)}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors"
           >
-            <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+            <MapPin className="h-3.5 w-3.5 text-brand-600" />
             <span>Devise calculée pour : <strong>{currentCountry.flag} {currentCountry.name}</strong></span>
-            <span className="text-emerald-700 font-bold">({currentCurrency})</span>
+            <span className="text-brand-700 font-bold">({currentCurrency})</span>
           </button>
         </div>
 
@@ -110,7 +113,7 @@ export function PricingPage() {
                   <ul className="space-y-3 text-xs text-slate-600">
                     {plan.features.map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-2.5">
-                        <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <Check className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -135,7 +138,7 @@ export function PricingPage() {
       {/* Payment Security & Methods */}
       <div className="rounded-2xl bg-slate-900 text-white p-8 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center justify-center sm:justify-start gap-2 text-brand-400 text-xs font-bold uppercase tracking-wider">
             <ShieldCheck className="h-4 w-4" />
             Moyens de paiement acceptés
           </div>
@@ -148,7 +151,7 @@ export function PricingPage() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
-            <Smartphone className="h-4 w-4 text-emerald-400" />
+            <Smartphone className="h-4 w-4 text-brand-400" />
             <span>Mobile Money</span>
           </div>
           <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
@@ -164,5 +167,6 @@ export function PricingPage() {
         onClose={() => setLocationModalOpen(false)}
       />
     </div>
+    </>
   );
 }

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /superadmin
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /auth
+Disallow: /reset-password
+
+Sitemap: https://loyerpro.vercel.app/sitemap.xml

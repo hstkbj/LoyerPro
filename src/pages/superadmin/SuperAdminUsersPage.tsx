@@ -135,7 +135,7 @@ export function SuperAdminUsersPage() {
           <button
             onClick={() => setFilterStatus('verified')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-              filterStatus === 'verified' ? 'bg-white text-emerald-800 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+              filterStatus === 'verified' ? 'bg-white text-brand-800 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Certifiés ({users.filter((u) => u.verification_status === 'verified').length})
@@ -210,8 +210,8 @@ export function SuperAdminUsersPage() {
 
                     <td className="px-4 py-3.5">
                       {status === 'verified' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-brand-50 text-brand-800 border border-brand-200">
+                          <ShieldCheck className="h-3.5 w-3.5 text-brand-600" />
                           Certifié
                         </span>
                       )}
@@ -261,7 +261,7 @@ export function SuperAdminUsersPage() {
                           size="sm"
                           variant="primary"
                           onClick={() => handleApprove(u.id)}
-                          className="text-xs bg-emerald-600 hover:bg-emerald-700 py-1"
+                          className="text-xs bg-brand-600 hover:bg-brand-700 py-1"
                         >
                           <CheckCircle className="h-3.5 w-3.5 mr-1" />
                           Valider
@@ -282,7 +282,7 @@ export function SuperAdminUsersPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleToggleSuspend(u.id, Boolean(u.is_suspended))}
-                        className={`text-xs py-1 ${u.is_suspended ? 'text-emerald-700 hover:bg-emerald-50 border-emerald-200' : 'text-slate-600 hover:bg-slate-100 border-slate-300'}`}
+                        className={`text-xs py-1 ${u.is_suspended ? 'text-brand-700 hover:bg-brand-50 border-brand-200' : 'text-slate-600 hover:bg-slate-100 border-slate-300'}`}
                       >
                         {u.is_suspended ? (
                           <>
@@ -352,7 +352,8 @@ export function SuperAdminUsersPage() {
                       <div className="aspect-4/3 rounded-lg overflow-hidden border border-slate-300 bg-white">
                         <img
                           src={doc.file_url}
-                          alt={doc.name}
+                          alt={`Document ${doc.name}`}
+                          loading="lazy"
                           className="h-full w-full object-cover"
                         />
                       </div>
@@ -394,7 +395,7 @@ export function SuperAdminUsersPage() {
                 variant="primary"
                 size="sm"
                 onClick={() => handleApprove(selectedDocUser.id)}
-                className="bg-emerald-600 hover:bg-emerald-700 font-bold"
+                className="bg-brand-600 hover:bg-brand-700 font-bold"
               >
                 <CheckCircle className="mr-1.5 h-4 w-4" />
                 Valider et Activer le Badge Certifié

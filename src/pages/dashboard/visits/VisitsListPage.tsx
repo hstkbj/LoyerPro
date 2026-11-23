@@ -132,7 +132,7 @@ export function VisitsListPage() {
                   href={`https://wa.me/${visit.visitor_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Bonjour ${visit.visitor_name}, suite à votre demande de visite pour ${visit.property?.title || 'le logement'} sur LoyerPro...`)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg border border-brand-200 transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   <span>WhatsApp</span>
@@ -164,7 +164,7 @@ export function VisitsListPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleUpdateStatus(visit.id, 'completed')}
-                    className="text-xs h-8 text-emerald-700 border-emerald-200"
+                    className="text-xs h-8 text-brand-700 border-brand-200"
                   >
                     Marquer effectuée
                   </Button>

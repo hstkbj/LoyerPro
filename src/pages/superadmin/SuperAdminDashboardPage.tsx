@@ -85,7 +85,7 @@ export function SuperAdminDashboardPage() {
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Abonnements</span>
-            <CreditCard className="h-4 w-4 text-emerald-600" />
+            <CreditCard className="h-4 w-4 text-brand-600" />
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{activeSubscriptions}</div>
           <p className="text-[11px] text-slate-400">Forfaits actifs réels</p>
@@ -103,7 +103,7 @@ export function SuperAdminDashboardPage() {
 
       {/* Security & RLS Status Notice */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-3">
-        <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+        <div className="flex items-center gap-2 text-brand-700 font-bold text-sm">
           <ShieldCheck className="h-5 w-5" />
           <span>Protection des données des bailleurs & Politiques RLS</span>
         </div>

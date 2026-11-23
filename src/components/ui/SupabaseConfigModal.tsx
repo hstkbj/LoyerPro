@@ -131,16 +131,16 @@ export function SupabaseConfigModal({ isOpen, onClose }: SupabaseConfigModalProp
         {/* Connection status banner */}
         <div className={`flex items-start gap-3 p-3.5 rounded-lg border text-xs ${
           currentConfig.isConfigured 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+            ? 'bg-brand-50 border-brand-200 text-brand-900' 
             : 'bg-amber-50 border-amber-200 text-amber-900'
         }`}>
           {currentConfig.isConfigured ? (
             <>
-              <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle className="h-5 w-5 text-brand-600 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold text-emerald-800">Paramètres Supabase renseignés</p>
-                <p className="text-emerald-700 mt-0.5 leading-relaxed">
-                  URL active : <code className="font-mono bg-emerald-100/70 px-1 py-0.5 rounded text-emerald-900">{currentConfig.url}</code>
+                <p className="font-semibold text-brand-800">Paramètres Supabase renseignés</p>
+                <p className="text-brand-700 mt-0.5 leading-relaxed">
+                  URL active : <code className="font-mono bg-brand-100/70 px-1 py-0.5 rounded text-brand-900">{currentConfig.url}</code>
                 </p>
                 <p className="text-slate-600 mt-1">
                   Cliquez sur « Tester la connexion » ci-dessous pour vérifier l'accessibilité en temps réel de votre instance.
@@ -164,11 +164,11 @@ export function SupabaseConfigModal({ isOpen, onClose }: SupabaseConfigModalProp
         {testResult && (
           <div className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 ${
             testResult.connected
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              ? 'bg-brand-50 border-brand-300 text-brand-800'
               : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}>
             {testResult.connected ? (
-              <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <Check className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
             )}
@@ -261,7 +261,7 @@ export function SupabaseConfigModal({ isOpen, onClose }: SupabaseConfigModalProp
               onClick={handleCopySql}
               className="text-xs h-7"
             >
-              {copied ? <Check className="h-3 w-3 mr-1 text-emerald-600" /> : <Copy className="h-3 w-3 mr-1" />}
+              {copied ? <Check className="h-3 w-3 mr-1 text-brand-600" /> : <Copy className="h-3 w-3 mr-1" />}
               {copied ? 'Copié !' : 'Copier SQL'}
             </Button>
           </div>

@@ -24,7 +24,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
         {photoUrl ? (
           <img
             src={photoUrl}
-            alt={property.title}
+            alt={`${property.title}${property.city ? ` – ${property.city}` : ''}`}
+            loading="lazy"
+            decoding="async"
+            width={640}
+            height={400}
             className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
             referrerPolicy="no-referrer"
           />
@@ -41,7 +45,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             {property.type}
           </Badge>
           {isVerified && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-600 text-white shadow-xs">
               <ShieldCheck className="h-3 w-3" />
               <span>Vérifié</span>
             </span>
@@ -82,7 +86,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           {/* Title */}
           <Link
             to={`/properties/${property.slug || property.id}`}
-            className="block text-sm font-bold text-slate-900 line-clamp-1 hover:text-emerald-700 transition-colors"
+            className="block text-sm font-bold text-slate-900 line-clamp-1 hover:text-brand-700 transition-colors"
           >
             {property.title}
           </Link>

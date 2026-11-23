@@ -62,7 +62,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-slate-900">
-                Loyer<span className="text-emerald-600">Pro</span>
+                Loyer<span className="text-brand-600">Pro</span>
               </span>
               <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                 {isAgency ? 'Espace Agence' : 'Espace Bailleur'}

@@ -110,7 +110,7 @@ export function InquiriesListPage() {
                   href={`https://wa.me/${inq.visitor_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Bonjour ${inq.visitor_name}, suite à votre message concernant ${inq.property?.title || 'le bien'} sur LoyerPro...`)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg border border-brand-200 transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   <span>Répondre par WhatsApp</span>
@@ -121,7 +121,7 @@ export function InquiriesListPage() {
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                     inq.is_replied
                       ? 'border-slate-300 text-slate-600 hover:bg-slate-50'
-                      : 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                      : 'border-brand-300 bg-brand-50 text-brand-800 hover:bg-brand-100'
                   }`}
                 >
                   {inq.is_replied ? 'Marquer non répondu' : 'Marquer comme répondu'}

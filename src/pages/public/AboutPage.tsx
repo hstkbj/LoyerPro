@@ -1,3 +1,4 @@
+import { Seo } from '../../components/seo/Seo';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -21,19 +22,23 @@ export function AboutPage() {
   const { currentCountry, currentCurrency } = useGeo();
 
   return (
+    <>
+      <Seo title="À propos" description="Découvrez LoyerPro : une plateforme qui met en relation locataires et bailleurs vérifiés, et simplifie la gestion locative." path="/about" />
     <div className="space-y-20 pb-20">
       {/* 1. Hero Section with High-End Architecture Imagery */}
       <section className="relative overflow-hidden bg-slate-900 text-white py-20 lg:py-28 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 opacity-20 mix-blend-luminosity pointer-events-none">
           <img
-            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80"
-            alt="Architecture moderne"
+            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=70&fm=webp"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="relative mx-auto max-w-5xl text-center space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/90 px-4 py-1.5 text-xs text-slate-300 backdrop-blur-xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-brand-400 animate-pulse" />
             <span>La plateforme immobilière de référence internationale</span>
           </div>
 
@@ -49,7 +54,7 @@ export function AboutPage() {
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
             <Link to="/properties">
-              <Button size="lg" variant="primary" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+              <Button size="lg" variant="primary" className="bg-brand-600 hover:bg-brand-700 text-white font-semibold">
                 Explorer les chambres & logements
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -67,7 +72,7 @@ export function AboutPage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-700">
               Notre Mission & Vision
             </p>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
@@ -82,7 +87,7 @@ export function AboutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
                 <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-brand-600" />
                   100% Vérifié
                 </div>
                 <p className="text-xs text-slate-500">
@@ -91,7 +96,7 @@ export function AboutPage() {
               </div>
               <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
                 <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-brand-600" />
                   Quittances avec QR code
                 </div>
                 <p className="text-xs text-slate-500">
@@ -103,13 +108,15 @@ export function AboutPage() {
 
           <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 aspect-4/3">
             <img
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80"
+              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70&fm=webp"
               alt="Intérieur moderne de chambre et studio"
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-6">
               <div className="text-white space-y-1">
-                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Portail multi-pays</div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-brand-300">Portail multi-pays</div>
                 <div className="text-base font-bold">Actif en Afrique de l'Ouest, Centrale, France et International</div>
               </div>
             </div>
@@ -133,7 +140,7 @@ export function AboutPage() {
             {/* 1. Locataires */}
             <div className="rounded-2xl bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                <div className="h-12 w-12 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold">
                   <Users className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Pour les Locataires</h3>
@@ -142,15 +149,15 @@ export function AboutPage() {
                 </p>
                 <ul className="space-y-2.5 text-xs text-slate-600">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Détails transparents : caution, charges (eau, électricité, Wi-Fi) incluses ou non.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Bailleurs certifiés avec badge de vérification d'identité.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Prise de rendez-vous de visite en direct et contact WhatsApp certifié.</span>
                   </li>
                 </ul>
@@ -174,15 +181,15 @@ export function AboutPage() {
                 </p>
                 <ul className="space-y-2.5 text-xs text-slate-600">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Publication d'annonces vérifiées avec galerie photos haute définition.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Génération de quittances conformes avec signature numérique et montant en toutes lettres.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <span>Suivi des retards de paiement, des cautions et des charges d'entretien.</span>
                   </li>
                 </ul>
@@ -233,7 +240,7 @@ export function AboutPage() {
       <section id="verification" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 lg:p-16 relative overflow-hidden">
           <div className="relative z-10 max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-xs text-emerald-400">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-xs text-brand-400">
               <ShieldCheck className="h-4 w-4" />
               <span>Garantie Zéro Faux Profil</span>
             </div>
@@ -248,7 +255,7 @@ export function AboutPage() {
 
             <div className="space-y-4 pt-2">
               <div className="flex items-start gap-3.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/20 text-brand-400 font-bold text-sm">
                   1
                 </div>
                 <div>
@@ -260,7 +267,7 @@ export function AboutPage() {
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/20 text-brand-400 font-bold text-sm">
                   2
                 </div>
                 <div>
@@ -272,7 +279,7 @@ export function AboutPage() {
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/20 text-brand-400 font-bold text-sm">
                   3
                 </div>
                 <div>
@@ -295,7 +302,7 @@ export function AboutPage() {
             <div className="text-xs text-slate-500 font-medium mt-1">Pays couverts</div>
           </div>
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-            <div className="text-3xl sm:text-4xl font-extrabold text-emerald-600">100%</div>
+            <div className="text-3xl sm:text-4xl font-extrabold text-brand-600">100%</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Quittances vérifiées</div>
           </div>
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
@@ -319,7 +326,7 @@ export function AboutPage() {
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+              <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               La recherche et la prise de contact pour les locataires sont-elles gratuites ?
             </h4>
             <p className="text-xs text-slate-600 leading-relaxed pl-6">
@@ -329,7 +336,7 @@ export function AboutPage() {
 
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+              <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               Quels documents dois-je fournir pour valider mon compte propriétaire ?
             </h4>
             <p className="text-xs text-slate-600 leading-relaxed pl-6">
@@ -339,7 +346,7 @@ export function AboutPage() {
 
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <HelpCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+              <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               Dans quelles devises s'effectuent les paiements ?
             </h4>
             <p className="text-xs text-slate-600 leading-relaxed pl-6">
@@ -360,7 +367,7 @@ export function AboutPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link to="/properties">
-              <Button size="lg" variant="primary" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button size="lg" variant="primary" className="bg-brand-600 hover:bg-brand-700 text-white">
                 Trouver une chambre
               </Button>
             </Link>
@@ -373,5 +380,6 @@ export function AboutPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }

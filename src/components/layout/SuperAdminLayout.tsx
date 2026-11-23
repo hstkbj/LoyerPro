@@ -123,7 +123,7 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
 
           <div className="flex items-center gap-3 text-xs">
             <span className="text-slate-500 hidden sm:inline">{profile?.email}</span>
-            <span className="h-2 w-2 rounded-full bg-emerald-500" title="Système opérationnel" />
+            <span className="h-2 w-2 rounded-full bg-brand-500" title="Système opérationnel" />
             <button
               onClick={handleLogout}
               className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"

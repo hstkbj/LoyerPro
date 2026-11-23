@@ -1,5 +1,5 @@
 import express from 'express';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, randomInt } from 'crypto';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleAuth } from 'google-auth-library';
@@ -51,6 +51,60 @@ const EMAIL_TEMPLATES: Record<string, (p: any) => { subject: string; html: strin
     html: `<p>Bonjour ${p.ownerName},</p><p>${p.visitorName} (${p.visitorPhone}) souhaite visiter <strong>${p.propertyTitle}</strong> le ${p.preferredDate} à ${p.preferredTime}.</p><p>Connectez-vous pour confirmer ou proposer un autre créneau.</p>`,
   }),
 };
+
+// ------------------------------------------------------------------
+// Sécurité des endpoints publics : échappement HTML, validation, limitation
+// de fréquence par IP. (La limitation est en mémoire : sur Vercel chaque
+// instance serverless a son propre compteur, c'est donc un frein anti-abus
+// « au mieux », pas une garantie stricte.)
+// ------------------------------------------------------------------
+function escapeHtml(value: unknown): string {
+  return String(value ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]
+  );
+}
+
+// Échappe récursivement toutes les valeurs texte avant injection dans un gabarit HTML.
+function escapeParams(params: any, depth = 0): any {
+  if (typeof params === 'string') return escapeHtml(params.slice(0, 2000));
+  if (typeof params === 'number' || typeof params === 'boolean') return params;
+  if (depth > 3 || params === null || typeof params !== 'object') return '';
+  const out: any = Array.isArray(params) ? [] : {};
+  for (const [k, v] of Object.entries(params).slice(0, 30)) out[k] = escapeParams(v, depth + 1);
+  return out;
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function clientIp(req: express.Request): string {
+  const fwd = req.headers['x-forwarded-for'];
+  const first = Array.isArray(fwd) ? fwd[0] : (fwd || '').split(',')[0];
+  return (first || req.socket?.remoteAddress || 'unknown').trim();
+}
+
+const rateBuckets = new Map<string, number[]>();
+
+function rateLimit(name: string, max: number, windowMs: number): express.RequestHandler {
+  return (req, res, next) => {
+    const now = Date.now();
+    const key = `${name}:${clientIp(req)}`;
+    const recent = (rateBuckets.get(key) || []).filter((t) => now - t < windowMs);
+    if (recent.length >= max) {
+      res.setHeader('Retry-After', String(Math.ceil(windowMs / 1000)));
+      return res.status(429).json({ error: 'Trop de requêtes. Réessayez plus tard.' });
+    }
+    recent.push(now);
+    rateBuckets.set(key, recent);
+    if (rateBuckets.size > 5000) {
+      for (const [k, v] of rateBuckets) if (!v.some((t) => now - t < windowMs)) rateBuckets.delete(k);
+    }
+    next();
+  };
+}
+
+function newTicketId(): string {
+  return 'LP-' + randomInt(100000, 1000000);
+}
 
 function getTransporter() {
   const host = (process.env.SMTP_HOST || '').trim();
@@ -554,14 +608,16 @@ export function createApp() {
     }
   });
 
-  app.post('/api/email/send', async (req, res) => {
+  app.post('/api/email/send', rateLimit('email', 20, 60 * 60 * 1000), async (req, res) => {
     try {
       const { to, template, params } = req.body || {};
-      if (!to || !template || !EMAIL_TEMPLATES[template]) {
-        return res.status(400).json({ error: 'Paramètres "to" et "template" (valide) requis.' });
+      if (!to || typeof to !== 'string' || to.length > 254 || !EMAIL_PATTERN.test(to) || !template || !Object.prototype.hasOwnProperty.call(EMAIL_TEMPLATES, template)) {
+        return res.status(400).json({ error: 'Paramètres "to" (e-mail valide) et "template" (valide) requis.' });
       }
 
-      const { subject, html } = EMAIL_TEMPLATES[template](params || {});
+      // Toutes les valeurs fournies par le client sont échappées : un visiteur ne peut pas injecter de HTML ou de liens.
+      const { subject: rawSubject, html } = EMAIL_TEMPLATES[template](escapeParams(params || {}));
+      const subject = rawSubject.replace(/[\r\n]+/g, ' ');
       const fromEmail = process.env.EMAIL_FROM || 'no-reply@loyerpro.bj';
       const fromName = process.env.EMAIL_FROM_NAME || 'LoyerPro';
       const transporter = getTransporter();
@@ -591,6 +647,74 @@ export function createApp() {
       console.error('Email send error:', error);
       await logEmail(req.body?.to || 'unknown', req.body?.template || 'unknown', req.body?.template || 'unknown', 'failed', error.message);
       return res.status(200).json({ sent: false, simulated: true, error: error.message || "Erreur lors de l'envoi de l'email" });
+    }
+  });
+
+  // Formulaire de contact public : le destinataire est choisi par le serveur (jamais par le client).
+  app.post('/api/contact', rateLimit('contact', 5, 60 * 60 * 1000), async (req, res) => {
+    const b = req.body || {};
+
+    // Piège anti-robot : un humain ne voit pas ce champ. On répond « succès » sans rien envoyer.
+    if (typeof b.website_url === 'string' && b.website_url.trim() !== '') {
+      return res.json({ ok: true, ticket: newTicketId() });
+    }
+
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const fullName = str(b.fullName);
+    const email = str(b.email);
+    const phone = str(b.phone);
+    const subject = str(b.subject).replace(/[\r\n]+/g, ' ');
+    const message = str(b.message);
+    const country = str(b.country);
+    const userType = ['locataire', 'proprietaire', 'agence', 'autre'].includes(b.userType) ? b.userType : 'autre';
+
+    const fields: Record<string, string> = {};
+    if (fullName.length < 2 || fullName.length > 100) fields.fullName = 'Nom invalide.';
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) fields.email = 'E-mail invalide.';
+    const digits = phone.replace(/\D/g, '');
+    if (!/^[+0-9\s().-]+$/.test(phone) || digits.length < 8 || digits.length > 15) fields.phone = 'Téléphone invalide.';
+    if (subject.length < 3 || subject.length > 150) fields.subject = 'Objet invalide.';
+    if (message.length < 10 || message.length > 3000) fields.message = 'Message invalide (10 à 3000 caractères).';
+    if (Object.keys(fields).length > 0) {
+      return res.status(400).json({ error: 'Certains champs sont invalides.', fields });
+    }
+
+    const transporter = getTransporter();
+    const to = (process.env.CONTACT_TO_EMAIL || process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || '').trim();
+    if (!transporter || !to) {
+      // On refuse plutôt que de faire croire à l'utilisateur que son message est parti.
+      return res.status(503).json({ error: "L'envoi de messages est momentanément indisponible. Écrivez-nous directement par e-mail." });
+    }
+
+    const ticket = newTicketId();
+    const fromEmail = process.env.EMAIL_FROM || 'no-reply@loyerpro.bj';
+    const fromName = process.env.EMAIL_FROM_NAME || 'LoyerPro';
+    const mailSubject = `[Contact ${ticket}] ${subject}`.slice(0, 200);
+    const html =
+      `<p><strong>Ticket ${ticket}</strong></p>` +
+      `<p><strong>Nom :</strong> ${escapeHtml(fullName)}<br/>` +
+      `<strong>E-mail :</strong> ${escapeHtml(email)}<br/>` +
+      `<strong>Téléphone :</strong> ${escapeHtml(phone)}<br/>` +
+      `<strong>Profil :</strong> ${escapeHtml(userType)}<br/>` +
+      `<strong>Pays :</strong> ${escapeHtml(country || 'non précisé')}</p>` +
+      `<p><strong>Objet :</strong> ${escapeHtml(subject)}</p>` +
+      `<blockquote style="white-space:pre-wrap">${escapeHtml(message)}</blockquote>`;
+
+    try {
+      await transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to,
+        replyTo: `"${fullName.replace(/["\r\n]/g, '')}" <${email}>`,
+        subject: mailSubject,
+        html,
+        text: `Ticket ${ticket}\nNom: ${fullName}\nE-mail: ${email}\nTéléphone: ${phone}\nProfil: ${userType}\nPays: ${country}\n\nObjet: ${subject}\n\n${message}`,
+      });
+      await logEmail(to, mailSubject, 'contact', 'sent');
+      return res.json({ ok: true, ticket });
+    } catch (err: any) {
+      console.warn('Contact sendMail error:', err?.message);
+      await logEmail(to, mailSubject, 'contact', 'failed', err?.message);
+      return res.status(502).json({ error: "Le message n'a pas pu être envoyé. Réessayez dans quelques instants." });
     }
   });
 

@@ -64,7 +64,7 @@ export function LocationSelectorModal({ isOpen, onClose }: LocationSelectorModal
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                <MapPin className="h-3.5 w-3.5 text-brand-600" />
                 <span>Afficher uniquement les chambres de ma localité</span>
               </div>
               <p className="text-[11px] text-slate-500">
@@ -133,7 +133,7 @@ export function LocationSelectorModal({ isOpen, onClose }: LocationSelectorModal
                     onClick={() => setSelectedCity(cty)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       isSelected
-                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        ? 'bg-brand-600 text-white border-brand-600'
                         : 'bg-slate-100 text-slate-700 border-transparent hover:bg-slate-200'
                     }`}
                   >

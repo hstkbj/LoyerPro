@@ -1,11 +1,14 @@
 import { getSupabase } from '../supabase/client';
+import { compressImage } from '../../lib/imageCompress';
 
 export const storageService = {
   async uploadPropertyPhoto(file: File, propertyId: string = 'general'): Promise<string> {
     return this.uploadPropertyImage(file, propertyId);
   },
 
-  async uploadPropertyImage(file: File, propertyId: string): Promise<string> {
+  async uploadPropertyImage(original: File, propertyId: string): Promise<string> {
+    // Les photos sont redimensionnées et converties en WebP avant l'envoi.
+    const file = await compressImage(original);
     const supabase = getSupabase();
     const fileExt = file.name.split('.').pop() || 'jpg';
     const fileName = `${propertyId}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
@@ -15,7 +18,7 @@ export const storageService = {
         const { data, error } = await supabase.storage
           .from('property-photos')
           .upload(fileName, file, {
-            cacheControl: '3600',
+            cacheControl: '31536000',
             upsert: false,
           });
 

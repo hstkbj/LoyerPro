@@ -34,7 +34,7 @@ export function QuittanceModal({ isOpen, onClose, payment }: QuittanceModalProps
           {/* Header */}
           <div className="flex justify-between items-start border-b border-slate-200 pb-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 block">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-700 block">
                 RÉPUBLIQUE DU BÉNIN
               </span>
               <h2 className="text-base font-extrabold text-slate-900 mt-1">
@@ -45,7 +45,7 @@ export function QuittanceModal({ isOpen, onClose, payment }: QuittanceModalProps
               </p>
             </div>
             <div className="text-right">
-              <div className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full font-bold border border-emerald-200">
+              <div className="inline-flex items-center gap-1 text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full font-bold border border-brand-200">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>RÉGLÉ</span>
               </div>
@@ -108,7 +108,7 @@ export function QuittanceModal({ isOpen, onClose, payment }: QuittanceModalProps
                   <td colSpan={3} className="px-3 py-2 text-right text-slate-700">
                     Total reçu :
                   </td>
-                  <td className="px-3 py-2 text-right text-sm text-emerald-800">
+                  <td className="px-3 py-2 text-right text-sm text-brand-800">
                     {formatFCFA(payment.amount)}
                   </td>
                 </tr>

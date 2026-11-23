@@ -1,144 +1,86 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, ShieldCheck, Globe, Mail, CheckCircle2 } from 'lucide-react';
+import { Mail, MessageCircle, ShieldCheck } from 'lucide-react';
 import { useGeo } from '../../contexts/GeoContext';
+import { Logo } from '../ui/Logo';
+import { LEGAL, SITE, whatsappLink } from '../../lib/site';
+import { resetConsent } from '../../lib/consent';
+
+const linkClass = 'text-slate-400 transition-colors hover:text-white';
 
 export function PublicFooter() {
-  const { currentCountry, currentCurrency } = useGeo();
+  const { currentCurrency } = useGeo();
+  const wa = whatsappLink('Bonjour, j’ai une question sur LoyerPro.');
 
   return (
-    <footer className="border-t border-slate-200 bg-white text-slate-600 text-sm">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-          {/* Col 1 */}
-          <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-                <Building2 className="h-4 w-4" />
-              </div>
-              <span className="text-base font-bold text-slate-900">
-                Loyer<span className="text-emerald-600">Pro</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Plateforme internationale de recherche de logements, de chambres vérifiées et de gestion locative automatisée pour locataires, propriétaires bailleurs et cabinets immobiliers.
+    <footer className="bg-brand-950 text-sm text-slate-300">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="space-y-4 lg:col-span-2">
+            <Logo light />
+            <p className="max-w-sm leading-relaxed text-slate-400">
+              Trouvez un logement auprès de bailleurs vérifiés, ou gérez vos biens, contrats, loyers et quittances depuis un seul espace.
             </p>
-            <div className="flex items-center gap-2 text-xs text-slate-700 font-medium pt-1">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span>Propriétaires & Agences certifiés par CNI/RCCM</span>
-            </div>
-          </div>
-
-          {/* Col 2 */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-900 mb-3">
-              Portail Locataires
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link to="/properties?roomCategory=chambre_seule" className="hover:text-slate-900 transition-colors">
-                  Chambres individuelles & Meublées
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?roomCategory=colocation" className="hover:text-slate-900 transition-colors">
-                  Colocations & Chambres partagées
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?type=Studio" className="hover:text-slate-900 transition-colors">
-                  Studios autonomes
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?type=Appartement" className="hover:text-slate-900 transition-colors">
-                  Appartements & Villas
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-slate-900 transition-colors">
-                  Guide & Sécurité du locataire
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3 */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-900 mb-3">
-              Bailleurs & Agences
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link to="/auth/register" className="hover:text-slate-900 transition-colors">
-                  Créer un compte Propriétaire
-                </Link>
-              </li>
-              <li>
-                <Link to="/auth/register" className="hover:text-slate-900 transition-colors">
-                  Créer un compte Agence Immobilière
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="hover:text-slate-900 transition-colors">
-                  Tarifs & Abonnements ({currentCurrency})
-                </Link>
-              </li>
-              <li>
-                <Link to="/about#verification" className="hover:text-slate-900 transition-colors">
-                  Processus de vérification d'identité
-                </Link>
-              </li>
-              <li>
-                <span className="text-slate-400">Quittances légales instantanées</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4 */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-900 mb-3">
-              Présence & Devises
-            </h4>
-            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-              Disponible en Afrique de l'Ouest, Afrique Centrale, France, Maghreb, Amérique du Nord et à l'international.
+            <p className="inline-flex items-center gap-2 text-xs font-medium text-brand-200">
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              Identité des bailleurs vérifiée par notre équipe
             </p>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Globe className="h-4 w-4 text-slate-400 shrink-0" />
-                <span>Région active : {currentCountry.flag} {currentCountry.name}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <Mail className="h-4 w-4 text-slate-400 shrink-0" />
-                <span>support@loyerpro.com</span>
-              </div>
-              <div className="pt-2 flex flex-wrap gap-1 text-[11px] text-slate-500">
-                <span className="px-2 py-0.5 rounded bg-slate-100 font-mono">FCFA (XOF/XAF)</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100 font-mono">EUR (€)</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100 font-mono">USD ($)</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100 font-mono">MAD</span>
-                <span className="px-2 py-0.5 rounded bg-slate-100 font-mono">CAD</span>
-              </div>
-            </div>
+          </div>
+
+          <nav aria-label="Locataires">
+            <h2 className="mb-4 font-sans text-xs font-semibold uppercase tracking-wider text-white">Locataires</h2>
+            <ul className="space-y-2.5">
+              <li><Link to="/properties?roomCategory=chambre_seule" className={linkClass}>Chambres meublées</Link></li>
+              <li><Link to="/properties?roomCategory=colocation" className={linkClass}>Colocations</Link></li>
+              <li><Link to="/properties?type=Studio" className={linkClass}>Studios</Link></li>
+              <li><Link to="/properties?type=Appartement" className={linkClass}>Appartements et villas</Link></li>
+              <li><Link to="/properties?verifiedOnly=true" className={linkClass}>Bailleurs vérifiés</Link></li>
+            </ul>
+          </nav>
+
+          <nav aria-label="Bailleurs et agences">
+            <h2 className="mb-4 font-sans text-xs font-semibold uppercase tracking-wider text-white">Bailleurs et agences</h2>
+            <ul className="space-y-2.5">
+              <li><Link to="/register" className={linkClass}>Créer un compte</Link></li>
+              <li><Link to="/pricing" className={linkClass}>Tarifs ({currentCurrency})</Link></li>
+              <li><Link to="/about#verification" className={linkClass}>Vérification d'identité</Link></li>
+              <li><Link to="/login" className={linkClass}>Connexion</Link></li>
+            </ul>
+          </nav>
+
+          <div>
+            <h2 className="mb-4 font-sans text-xs font-semibold uppercase tracking-wider text-white">Contact</h2>
+            <ul className="space-y-2.5">
+              <li>
+                <a href={`mailto:${SITE.supportEmail}`} className={`${linkClass} inline-flex items-center gap-2`}>
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  {SITE.supportEmail}
+                </a>
+              </li>
+              {wa && (
+                <li>
+                  <a href={wa} target="_blank" rel="noopener noreferrer" className={`${linkClass} inline-flex items-center gap-2`}>
+                    <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                    WhatsApp
+                  </a>
+                </li>
+              )}
+              <li><Link to="/contact" className={linkClass}>Formulaire de contact</Link></li>
+            </ul>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-slate-200 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} LoyerPro. Tous droits réservés. Gestion locative & portail certifié.</p>
-          <div className="flex items-center gap-6">
-            <Link to="/about" className="hover:text-slate-900 transition-colors">
-              À propos
-            </Link>
-            <Link to="/properties" className="hover:text-slate-900 transition-colors">
-              Annonces
-            </Link>
-            <Link to="/pricing" className="hover:text-slate-900 transition-colors">
-              Tarifs
-            </Link>
-            <Link to="/contact" className="hover:text-slate-900 transition-colors">
-              Contact
-            </Link>
-          </div>
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 md:flex-row md:items-center md:justify-between">
+          <p>© {new Date().getFullYear()} {LEGAL.companyName}. Tous droits réservés.</p>
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <li><Link to="/conditions-generales" className={linkClass}>Conditions générales</Link></li>
+            <li><Link to="/politique-de-confidentialite" className={linkClass}>Politique de confidentialité</Link></li>
+            <li>
+              <button type="button" onClick={resetConsent} className={linkClass}>
+                Gérer les cookies
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </footer>

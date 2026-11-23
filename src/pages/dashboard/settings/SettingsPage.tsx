@@ -1,3 +1,4 @@
+import { compressImageToDataUrl } from '../../../lib/imageCompress';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -232,20 +233,19 @@ export function SettingsPage() {
     }
 
     setUploadError('');
-    const reader = new FileReader();
-    reader.onload = () => {
-      const resultStr = reader.result as string;
-      const newDoc: VerificationDocument = {
-        id: 'doc_' + Math.random().toString(36).substring(2, 9),
-        document_type: docType,
-        name: file.name,
-        file_url: resultStr,
-        uploaded_at: new Date().toISOString(),
-        status: 'pending',
-      };
+    compressImageToDataUrl(file, { maxSize: 1800, quality: 0.8 })
+      .then((resultStr) => {
+        const newDoc: VerificationDocument = {
+          id: 'doc_' + Math.random().toString(36).substring(2, 9),
+          document_type: docType,
+          name: file.name,
+          file_url: resultStr,
+          uploaded_at: new Date().toISOString(),
+          status: 'pending',
+        };
       setNewDocs((prev) => [...prev, newDoc]);
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch(() => setUploadError('Impossible de lire ce fichier. Essayez une autre image ou un PDF.'));
   };
 
   const handleRemoveNewDoc = (id: string) => {
@@ -305,7 +305,7 @@ export function SettingsPage() {
           <ShieldCheck className="h-3.5 w-3.5" />
           <span>Pièces d'Identité & CNI</span>
           {verificationStatus === 'verified' && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-brand-100 text-brand-800 font-bold">
               Certifié
             </span>
           )}
@@ -333,8 +333,8 @@ export function SettingsPage() {
       {activeTab === 'profile' && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs max-w-2xl space-y-6">
           {profileSaved && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <div className="p-3.5 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-600" />
               <span>Vos informations ont été mises à jour avec succès.</span>
             </div>
           )}
@@ -419,7 +419,7 @@ export function SettingsPage() {
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <ShieldCheck className="h-6 w-6 text-emerald-600" />
+                <ShieldCheck className="h-6 w-6 text-brand-600" />
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
                     Statut de Conformité du compte
@@ -431,8 +431,8 @@ export function SettingsPage() {
               </div>
 
               {verificationStatus === 'verified' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-800">
+                  <CheckCircle2 className="h-4 w-4 text-brand-600" />
                   Bailleur Certifié
                 </span>
               )}
@@ -484,10 +484,10 @@ export function SettingsPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-700 truncate">
-                      <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <FileCheck className="h-4 w-4 text-brand-600 shrink-0" />
                       <span className="truncate">{doc.name}</span>
                     </div>
-                    <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
                       Document reçu
                     </span>
                   </div>
@@ -503,8 +503,8 @@ export function SettingsPage() {
             </h4>
 
             {uploadSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <div className="p-3 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-brand-600" />
                 <span>Documents envoyés avec succès. Notre équipe les traitera sous 24h.</span>
               </div>
             )}
@@ -653,7 +653,7 @@ export function SettingsPage() {
             </div>
 
             <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-              <Smartphone className="h-4 w-4 text-emerald-600" />
+              <Smartphone className="h-4 w-4 text-brand-600" />
               <span>Mobile Money & Cartes Bancaires</span>
             </div>
           </div>
@@ -665,7 +665,7 @@ export function SettingsPage() {
             </div>
           )}
           {paymentNotice && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs p-3 flex items-start gap-2">
+            <div className="rounded-xl border border-brand-200 bg-brand-50 text-brand-800 text-xs p-3 flex items-start gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{paymentNotice}</span>
             </div>
@@ -683,13 +683,13 @@ export function SettingsPage() {
                   key={p.id}
                   className={`rounded-2xl border p-6 bg-white space-y-4 flex flex-col justify-between ${
                     isRecommended ? 'border-slate-900 ring-2 ring-slate-900 shadow-md' : 'border-slate-200'
-                  } ${isCurrentPlan ? 'ring-2 ring-emerald-500' : ''}`}
+                  } ${isCurrentPlan ? 'ring-2 ring-brand-500' : ''}`}
                 >
                   <div>
                     <div className="flex justify-between items-start">
                       <h3 className="font-extrabold text-slate-900 text-sm">{p.name}</h3>
                       {isCurrentPlan ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-600 text-white">
                           Votre forfait
                         </span>
                       ) : isRecommended ? (
@@ -708,7 +708,7 @@ export function SettingsPage() {
                   <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
                     {p.features.map((f, i) => (
                       <li key={i} className="flex items-center gap-2">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-brand-600 shrink-0" />
                         <span>{f}</span>
                       </li>
                     ))}

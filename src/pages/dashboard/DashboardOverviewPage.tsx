@@ -104,8 +104,8 @@ export function DashboardOverviewPage() {
               Bonjour, {profile?.full_name || 'Bailleur'}
             </h1>
             {verificationStatus === 'verified' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-100 text-brand-800">
+                <ShieldCheck className="h-3.5 w-3.5 text-brand-600" />
                 Certifié
               </span>
             )}
@@ -249,7 +249,7 @@ export function DashboardOverviewPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Loyers Encaissés</span>
-            <CreditCard className="h-4 w-4 text-emerald-600" />
+            <CreditCard className="h-4 w-4 text-brand-600" />
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-2xl font-extrabold text-slate-900">

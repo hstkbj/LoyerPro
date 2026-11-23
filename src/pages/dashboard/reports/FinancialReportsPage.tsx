@@ -119,7 +119,7 @@ export function FinancialReportsPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">
               Total Loyers Encaissés
             </span>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <TrendingUp className="h-4 w-4 text-brand-600" />
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
             {formatFCFA(totalRevenue)}
@@ -153,7 +153,7 @@ export function FinancialReportsPage() {
             </span>
             <DollarSign className="h-4 w-4 text-slate-900" />
           </div>
-          <div className={`text-2xl font-extrabold ${netIncome >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+          <div className={`text-2xl font-extrabold ${netIncome >= 0 ? 'text-brand-700' : 'text-rose-600'}`}>
             {formatFCFA(netIncome)}
           </div>
           <p className="text-[11px] text-slate-400">

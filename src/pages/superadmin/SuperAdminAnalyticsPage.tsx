@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, Activity, UserPlus, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Activity, UserPlus, Clock, AlertTriangle, BarChart3, ExternalLink } from 'lucide-react';
+import { SITE } from '../../lib/site';
 import { analyticsService, type AnalyticsOverview } from '../../services/analytics/analyticsService';
 
 const RANGE_OPTIONS = [
@@ -70,6 +71,32 @@ export function SuperAdminAnalyticsPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Audience Vercel : sans cookie, donc complète même quand les visiteurs refusent Google Analytics */}
+      <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 rounded-lg bg-white border border-brand-200">
+            <BarChart3 className="h-4 w-4 text-brand-700" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Audience Vercel (sans cookie)</p>
+            <p className="text-xs text-slate-600 mt-0.5 max-w-xl">
+              Visiteurs, pages vues, pays, appareils, sources de trafic et vitesse réelle du site. Contrairement à
+              Google Analytics, ces chiffres incluent aussi les visiteurs qui ont refusé les cookies. Vos propres
+              visites en tant que superadmin sont exclues.
+            </p>
+          </div>
+        </div>
+        <a
+          href={SITE.vercelAnalyticsUrl || 'https://vercel.com/holmes-projects-fcec4767/loyerpro/analytics'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-brand-800"
+        >
+          Ouvrir l'audience Vercel
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+        </a>
       </div>
 
       {data?.simulated && (

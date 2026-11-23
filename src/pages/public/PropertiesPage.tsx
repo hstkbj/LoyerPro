@@ -1,3 +1,4 @@
+import { Seo } from '../../components/seo/Seo';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { propertyService } from '../../services/properties/propertyService';
@@ -95,6 +96,8 @@ export function PropertiesPage() {
   const activeCountryObj = availableCountries.find(c => c.name === selectedCountry || c.code === selectedCountry);
 
   return (
+    <>
+      <Seo title="Logements à louer" description="Chambres, studios, appartements et colocations proposés par des bailleurs vérifiés. Filtrez par ville, budget et type de logement." path="/properties" />
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* Header & Localized Toggle */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -113,10 +116,10 @@ export function PropertiesPage() {
             onClick={() => setLocationModalOpen(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs"
           >
-            <MapPin className="h-4 w-4 text-emerald-600" />
+            <MapPin className="h-4 w-4 text-brand-600" />
             <span>Localité : <strong>{currentCountry.flag} {currentCountry.name}</strong> ({currentCity || 'Toutes'})</span>
             <span className="text-slate-300">|</span>
-            <span className="text-emerald-700 font-bold">{currentCurrency}</span>
+            <span className="text-brand-700 font-bold">{currentCurrency}</span>
           </button>
         </div>
       </div>
@@ -260,10 +263,10 @@ export function PropertiesPage() {
                 type="checkbox"
                 checked={verifiedOnly}
                 onChange={(e) => setVerifiedOnly(e.target.checked)}
-                className="rounded text-emerald-600 focus:ring-emerald-500"
+                className="rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="flex items-center gap-1">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <ShieldCheck className="h-3.5 w-3.5 text-brand-600" />
                 Bailleur vérifié CNI
               </span>
             </label>
@@ -273,7 +276,7 @@ export function PropertiesPage() {
                 type="checkbox"
                 checked={chargesIncluded}
                 onChange={(e) => setChargesIncluded(e.target.checked)}
-                className="rounded text-emerald-600 focus:ring-emerald-500"
+                className="rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="flex items-center gap-1">
                 <Zap className="h-3.5 w-3.5 text-amber-500" />
@@ -321,5 +324,6 @@ export function PropertiesPage() {
         onClose={() => setLocationModalOpen(false)}
       />
     </div>
+    </>
   );
 }

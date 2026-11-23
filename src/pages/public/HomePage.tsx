@@ -3,30 +3,62 @@ import { useNavigate, Link } from 'react-router-dom';
 import { propertyService } from '../../services/properties/propertyService';
 import type { Property, SubscriptionPlan } from '../../types';
 import { PropertyCard } from '../../components/public/PropertyCard';
-import { Button } from '../../components/ui/Button';
 import { useGeo } from '../../contexts/GeoContext';
 import { LocationSelectorModal } from '../../components/layout/LocationSelectorModal';
 import { getPricingPlansList } from '../../services/currency/currencyService';
 import { planService } from '../../services/plans/planService';
+import { Seo } from '../../components/seo/Seo';
+import { SITE, absoluteUrl } from '../../lib/site';
 import {
   Search,
-  Building2,
-  CheckCircle2,
   ShieldCheck,
-  Zap,
   ArrowRight,
-  TrendingUp,
   MapPin,
-  Bed,
-  SlidersHorizontal,
-  Home,
-  Users,
-  Compass,
   Check,
-  CreditCard,
-  Smartphone,
-  MessageSquare,
+  FileText,
+  Wallet,
+  Receipt,
+  KeyRound,
+  BadgeCheck,
+  Eye,
+  ChevronDown,
+  Building2,
 } from 'lucide-react';
+
+const HERO_IMAGE = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1100&q=70&fm=webp';
+
+const ROOM_CATEGORIES = [
+  { value: '', label: 'Tous les types' },
+  { value: 'chambre_seule', label: 'Chambre individuelle' },
+  { value: 'chambre_salon', label: 'Chambre et salon' },
+  { value: 'studio', label: 'Studio' },
+  { value: 'colocation', label: 'Colocation' },
+  { value: 'appartement', label: 'Appartement' },
+  { value: 'villa', label: 'Villa ou maison' },
+];
+
+const FAQ = [
+  {
+    q: 'Comment savoir si un bailleur est fiable ?',
+    a: "Les bailleurs et agences envoient une pièce d'identité (et un document d'immatriculation pour les agences). Notre équipe les examine, puis l'annonce reçoit un badge « vérifié ». Le badge réduit les risques mais ne remplace pas la prudence : visitez toujours le logement avant de payer.",
+  },
+  {
+    q: 'Est-ce gratuit pour les locataires ?',
+    a: 'Oui. Rechercher des logements, contacter un bailleur et demander une visite sont gratuits.',
+  },
+  {
+    q: 'Que puis-je gérer en tant que propriétaire ou agence ?',
+    a: 'Vos biens et chambres, vos locataires, vos contrats, les loyers encaissés, vos dépenses, les quittances en PDF et des rapports financiers, depuis un seul espace.',
+  },
+  {
+    q: 'Comment payer un abonnement ?',
+    a: 'Par Mobile Money ou carte bancaire via notre prestataire de paiement FedaPay. Un forfait gratuit est disponible pour démarrer avec un premier bien.',
+  },
+  {
+    q: 'Dans quels pays LoyerPro est-il disponible ?',
+    a: "Le site est pensé pour l'Afrique de l'Ouest et centrale, avec des annonces et des devises adaptées à votre pays. Vous pouvez changer de pays et de devise à tout moment depuis le haut de la page.",
+  },
+];
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -36,11 +68,9 @@ export function HomePage() {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [dbPlans, setDbPlans] = useState<SubscriptionPlan[] | undefined>(undefined);
 
-  // Search state
   const [searchCity, setSearchCity] = useState(currentCity);
   const [roomCategory, setRoomCategory] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,487 +116,411 @@ export function HomePage() {
     const params = new URLSearchParams();
     if (searchCity) params.set('city', searchCity);
     if (roomCategory) params.set('roomCategory', roomCategory);
-    if (maxPrice) params.set('maxPrice', maxPrice);
-    if (verifiedOnly) params.set('verifiedOnly', 'true');
+    if (maxPrice && Number(maxPrice) > 0) params.set('maxPrice', maxPrice);
     navigate(`/properties?${params.toString()}`);
   };
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        name: SITE.name,
+        url: SITE.url,
+        logo: absoluteUrl('/icon-512.png'),
+        email: SITE.supportEmail,
+      },
+      {
+        '@type': 'WebSite',
+        name: SITE.name,
+        url: SITE.url,
+        inLanguage: 'fr',
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: FAQ.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+    ],
+  };
+
+  const fieldLabel = 'block text-[11px] font-semibold uppercase tracking-wider text-slate-500';
+  const fieldControl =
+    'mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20';
+
   return (
-    <div className="space-y-16 pb-20">
-      {/* 1. Hero Section with Real Architecture Photography */}
-      <section className="relative overflow-hidden bg-slate-950 text-white pt-14 pb-20 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
-        <div className="absolute inset-0 opacity-25 mix-blend-luminosity pointer-events-none">
-          <img
-            src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=2000&q=80"
-            alt="Immeubles et appartements modernes"
-            className="w-full h-full object-cover"
-          />
-        </div>
+    <>
+      <Seo
+        description="Trouvez une chambre, un studio ou un appartement auprès de bailleurs vérifiés. Propriétaires et agences : gérez biens, contrats, loyers et quittances en un seul espace."
+        path="/"
+      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-        <div className="relative mx-auto max-w-5xl space-y-6">
-          {/* Geolocation Notice Banner */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 sm:px-4 rounded-xl border border-slate-700/80 bg-slate-900/90 backdrop-blur-md">
-            <div className="flex items-center gap-2 text-xs text-slate-200">
-              <span className="text-base">{currentCountry.flag}</span>
-              <span className="font-semibold text-emerald-400">Localisation détectée :</span>
-              <span className="font-medium text-white">{currentCountry.name} {currentCity ? `(${currentCity})` : ''}</span>
-              <span className="hidden sm:inline text-slate-400">· Devise active : <strong className="text-white">{currentCurrency}</strong></span>
-            </div>
-            <button
-              onClick={() => setLocationModalOpen(true)}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 flex items-center gap-1"
-            >
-              <MapPin className="h-3 w-3" />
-              Changer de localité ou devise
-            </button>
-          </div>
-
-          <div className="text-center space-y-4 pt-2">
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Trouvez votre chambre ou appartement idéal.<br className="hidden sm:inline" />
-              <span className="text-emerald-400">Bailleurs vérifiés par pièce d'identité.</span>
-            </h1>
-
-            <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-300 leading-relaxed">
-              La première plateforme internationale garantissant zéro arnaque : baux en règle, charges transparentes et quittances automatisées.
+      {/* 1. Hero */}
+      <section className="relative overflow-hidden bg-sand-50">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 lg:px-8 lg:pb-24 lg:pt-20">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-semibold text-brand-800">
+              <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+              Bailleurs vérifiés par notre équipe
             </p>
-          </div>
+            <h1 className="mt-5 text-4xl font-bold leading-[1.1] text-slate-900 sm:text-5xl lg:text-6xl">
+              Louez un logement <span className="text-brand-700">en toute confiance</span>
+            </h1>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
+              Chambres, studios et appartements publiés par des bailleurs dont l'identité a été contrôlée. Et pour
+              les propriétaires : contrats, loyers et quittances au même endroit.
+            </p>
 
-          {/* Quick Filter Search Box */}
-          <div className="mx-auto max-w-4xl pt-2">
             <form
               onSubmit={handleSearch}
-              className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 rounded-2xl bg-white p-3.5 shadow-2xl text-slate-900"
+              aria-label="Rechercher un logement"
+              className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/5 sm:p-5"
             >
-              {/* Ville */}
-              <div className="sm:col-span-3 text-left px-2">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Ville / Secteur
-                </label>
-                <select
-                  value={searchCity}
-                  onChange={(e) => setSearchCity(e.target.value)}
-                  className="w-full bg-transparent py-1.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none"
-                >
-                  <option value="">Toutes les villes ({currentCountry.name})</option>
-                  {currentCountry.cities.map((cty) => (
-                    <option key={cty} value={cty}>
-                      {cty}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="home-city" className={fieldLabel}>Ville</label>
+                  <select id="home-city" value={searchCity} onChange={(e) => setSearchCity(e.target.value)} className={fieldControl}>
+                    <option value="">Toutes les villes ({currentCountry.name})</option>
+                    {currentCountry.cities.map((cty) => (
+                      <option key={cty} value={cty}>{cty}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="home-type" className={fieldLabel}>Type de logement</label>
+                  <select id="home-type" value={roomCategory} onChange={(e) => setRoomCategory(e.target.value)} className={fieldControl}>
+                    {ROOM_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="home-budget" className={fieldLabel}>Budget maximum ({currentCurrency})</label>
+                  <input
+                    id="home-budget"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    placeholder={currentCurrency === 'EUR' || currentCurrency === 'USD' ? 'Ex. 600' : 'Ex. 100000'}
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className={fieldControl}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    className="inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                  >
+                    <Search className="h-4 w-4" aria-hidden="true" />
+                    Rechercher
+                  </button>
+                </div>
               </div>
-
-              {/* Type de logement / chambre */}
-              <div className="sm:col-span-4 text-left px-2 sm:border-l sm:border-slate-200">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Type de Chambre ou Logement
-                </label>
-                <select
-                  value={roomCategory}
-                  onChange={(e) => setRoomCategory(e.target.value)}
-                  className="w-full bg-transparent py-1.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none"
-                >
-                  <option value="">Toutes les catégories</option>
-                  <option value="chambre_seule">Chambre individuelle</option>
-                  <option value="chambre_salon">Chambre & Salon autonome</option>
-                  <option value="studio">Studio indépendant</option>
-                  <option value="colocation">Colocation / Chambre en colocation</option>
-                  <option value="appartement">Appartement familial</option>
-                  <option value="villa">Villa / Maison entière</option>
-                </select>
-              </div>
-
-              {/* Budget Max */}
-              <div className="sm:col-span-3 text-left px-2 sm:border-l sm:border-slate-200">
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Budget max ({currentCurrency})
-                </label>
-                <input
-                  type="number"
-                  placeholder={`Ex: ${currentCurrency === 'EUR' || currentCurrency === 'USD' ? '600' : '100000'}`}
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full bg-transparent py-1.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none"
-                />
-              </div>
-
-              {/* Submit */}
-              <div className="sm:col-span-2 flex items-center">
-                <Button type="submit" variant="primary" className="w-full h-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">
-                  <Search className="mr-1.5 h-4 w-4" />
-                  Trouver
-                </Button>
-              </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>
+                  {currentCountry.flag} {currentCountry.name}, prix en {currentCurrency}.
+                </span>
+                <button type="button" onClick={() => setLocationModalOpen(true)} className="font-semibold text-brand-700 underline underline-offset-2">
+                  Modifier
+                </button>
+              </p>
             </form>
 
-            {/* Fast Quick Links */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-3 text-xs text-slate-300">
-              <span className="text-slate-400">Recherches rapides :</span>
-              <button
-                onClick={() => {
-                  setRoomCategory('chambre_seule');
-                  navigate('/properties?roomCategory=chambre_seule');
-                }}
-                className="px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px]"
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-700 px-5 py-3 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
               >
-                Chambres seules
-              </button>
-              <button
-                onClick={() => {
-                  setRoomCategory('studio');
-                  navigate('/properties?type=Studio');
-                }}
-                className="px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px]"
-              >
-                Studios meublés
-              </button>
-              <button
-                onClick={() => {
-                  setRoomCategory('colocation');
-                  navigate('/properties?roomCategory=colocation');
-                }}
-                className="px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px]"
-              >
-                Colocations
-              </button>
-              <button
-                onClick={() => navigate('/properties?verifiedOnly=true')}
-                className="px-2.5 py-1 rounded-full bg-emerald-900/60 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 text-[11px] font-semibold flex items-center gap-1"
-              >
-                <ShieldCheck className="h-3 w-3" />
-                Bailleurs certifiés uniquement
-              </button>
+                Je suis propriétaire : publier mon bien
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link to="/properties?verifiedOnly=true" className="text-sm font-semibold text-slate-700 underline underline-offset-4 hover:text-brand-700">
+                Voir uniquement les bailleurs vérifiés
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative hidden lg:block">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-brand-100 shadow-2xl shadow-brand-900/10">
+              <img
+                src={HERO_IMAGE}
+                alt="Façade d'un immeuble résidentiel moderne"
+                width={1100}
+                height={1375}
+                fetchPriority="high"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="absolute -left-8 bottom-10 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Identité contrôlée</p>
+                <p className="text-xs text-slate-500">CNI ou passeport examinés</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Listings Section (Filtered by Country/City) */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                {isLocalizedOnly ? `${currentCountry.flag} Disponible en ${currentCountry.name}` : '🌍 Toutes les localités'}
+      {/* 2. Atouts */}
+      <section className="border-y border-slate-200 bg-white">
+        <ul className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+          {[
+            { icon: ShieldCheck, title: 'Bailleurs vérifiés', text: "Pièce d'identité examinée avant publication." },
+            { icon: Eye, title: 'Annonces transparentes', text: 'Loyer, charges et conditions affichés clairement.' },
+            { icon: Receipt, title: 'Quittances en PDF', text: 'Générées automatiquement pour chaque loyer.' },
+            { icon: Wallet, title: 'Paiement simple', text: 'Mobile Money et cartes bancaires pour les abonnements.' },
+          ].map(({ icon: Icon, title, text }) => (
+            <li key={title} className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
-              Chambres & Logements prêts à habiter
+              <div>
+                <p className="text-sm font-bold text-slate-900">{title}</p>
+                <p className="mt-0.5 text-sm text-slate-600">{text}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* 3. Annonces récentes */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20" aria-labelledby="titre-annonces">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-brand-700">Annonces récentes</p>
+            <h2 id="titre-annonces" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
+              Disponibles en {currentCountry.name}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Annonces auditées avec photos réelles, détail des charges et baux sécurisés.
-            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/properties"
-              className="inline-flex items-center text-xs font-bold text-slate-900 hover:text-emerald-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg transition-colors"
-            >
-              <span>Consulter tout le catalogue</span>
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-            </Link>
-          </div>
+          <Link to="/properties" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-800">
+            Voir tous les logements
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-72 rounded-2xl bg-slate-100 animate-pulse border border-slate-200" />
+              <div key={i} className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
             ))}
           </div>
         ) : properties.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {properties.slice(0, 6).map((p) => (
               <PropertyCard key={p.id} property={p} />
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center space-y-4">
-            <Building2 className="mx-auto h-12 w-12 text-slate-400" />
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-900">
-                Aucune chambre publiée dans {currentCountry.name} pour l'instant
-              </h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Vous pouvez élargir la recherche à tous les pays ou être le premier propriétaire à publier une annonce dans cette localité !
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
+          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-sand-50 p-10 text-center sm:p-14">
+            <Building2 className="mx-auto h-10 w-10 text-slate-400" aria-hidden="true" />
+            <h3 className="mt-4 text-lg font-bold text-slate-900">
+              Aucune annonce publiée en {currentCountry.name} pour le moment
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Élargissez la recherche à un autre pays, ou soyez le premier propriétaire à publier ici.
+            </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
                 onClick={() => setLocationModalOpen(true)}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
               >
-                Changer de pays / ville
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate('/auth/register')}
-              >
-                Déposer un bien dans {currentCountry.name}
-              </Button>
+                Changer de pays ou de ville
+              </button>
+              <Link to="/register" className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
+                Publier un bien
+              </Link>
             </div>
           </div>
         )}
       </section>
 
-      {/* 3. Dual Perspective: Locataires vs Propriétaires */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Card Locataire */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Pour les Locataires
-            </p>
-            <h3 className="text-xl font-extrabold text-slate-900">
-              Louez en toute tranquillité, sans démarcheur suspect
-            </h3>
-            <ul className="space-y-3 text-xs text-slate-600">
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Pièces d'identité vérifiées :</strong> Aucun faux propriétaire ou arnaque d'acompte.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Clarté sur les charges :</strong> Sachez à l'avance si l'eau, l'électricité et le Wi-Fi sont inclus.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Quittances officielles :</strong> Téléchargez vos reçus certifiés pour chaque loyer payé.</span>
-              </li>
-            </ul>
-            <div className="pt-2">
-              <Link to="/properties">
-                <Button variant="primary" size="sm" className="bg-slate-900 text-white hover:bg-slate-800">
-                  Parcourir les chambres disponibles
-                </Button>
-              </Link>
-            </div>
+      {/* 4. Comment ça marche */}
+      <section className="bg-sand-50 py-16 lg:py-20" aria-labelledby="titre-etapes">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold text-brand-700">Comment ça marche</p>
+            <h2 id="titre-etapes" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
+              Deux parcours, un même niveau de confiance
+            </h2>
           </div>
 
-          {/* Card Propriétaire */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Pour les Propriétaires & Agences
-            </p>
-            <h3 className="text-xl font-extrabold text-slate-900">
-              Gérez votre patrimoine sans stress et encaissez à temps
-            </h3>
-            <ul className="space-y-3 text-xs text-slate-600">
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Validation par CNI / Registre :</strong> Obtenez le badge officiel qui attire les meilleurs locataires.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Quittances en 1 clic :</strong> Générées avec QR code de conformité et envoyables par WhatsApp.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Devise locale adaptée :</strong> Facturation et loyers calculés dans votre monnaie ({currentCurrency}).</span>
-              </li>
-            </ul>
-            <div className="pt-2">
-              <Link to="/auth/register">
-                <Button variant="primary" size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                  Créer un compte Bailleur Certifié
-                </Button>
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+              <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                <KeyRound className="h-5 w-5 text-brand-700" aria-hidden="true" />
+                Je cherche un logement
+              </h3>
+              <ol className="mt-6 space-y-5">
+                {[
+                  ['Je filtre', 'Ville, type de logement et budget dans ma devise.'],
+                  ['Je compare', 'Photos, charges, équipements et badge du bailleur.'],
+                  ['Je contacte', 'Je demande des renseignements ou une visite, gratuitement.'],
+                ].map(([t, d], i) => (
+                  <li key={t} className="flex gap-4">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">{i + 1}</span>
+                    <div>
+                      <p className="font-semibold text-slate-900">{t}</p>
+                      <p className="text-sm text-slate-600">{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/properties" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
+                Parcourir les logements
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div className="rounded-3xl bg-brand-950 p-6 text-white sm:p-8">
+              <h3 className="flex items-center gap-2 text-xl font-bold">
+                <FileText className="h-5 w-5 text-brand-300" aria-hidden="true" />
+                Je loue mes biens
+              </h3>
+              <ol className="mt-6 space-y-5">
+                {[
+                  ['Je crée mon compte', "J'envoie mes documents d'identité pour obtenir le badge vérifié."],
+                  ['Je publie', 'Mes annonces apparaissent auprès des locataires de ma ville.'],
+                  ['Je gère', 'Contrats, loyers, dépenses et quittances depuis mon espace.'],
+                ].map(([t, d], i) => (
+                  <li key={t} className="flex gap-4">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-300 text-sm font-bold text-brand-950">{i + 1}</span>
+                    <div>
+                      <p className="font-semibold">{t}</p>
+                      <p className="text-sm text-slate-300">{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/register" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-900 hover:bg-brand-50">
+                Créer mon compte gratuitement
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. Tarifs & Abonnements Section */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-            Tarifs & Abonnements
-          </p>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900">
-            Des forfaits pensés pour votre région
+      {/* 5. Tarifs */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20" aria-labelledby="titre-tarifs">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold text-brand-700">Tarifs</p>
+          <h2 id="titre-tarifs" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
+            Un forfait pour chaque taille de parc
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            100% gratuit pour les locataires. Forfaits de gestion tout-en-un pour bailleurs et agences, convertis en temps réel dans votre devise ({currentCurrency}).
+          <p className="mt-3 text-slate-600">
+            Commencez gratuitement, changez de forfait quand vous le souhaitez. Prix affichés en {currentCurrency}.
           </p>
-
-          <div className="pt-1 flex items-center justify-center">
-            <button
-              onClick={() => setLocationModalOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-2xs transition-all"
-            >
-              <span>{currentCountry.flag}</span>
-              <span>Devise locale : <strong className="text-emerald-700">{currentCurrency}</strong></span>
-              <span className="text-[11px] text-slate-400 font-normal underline decoration-slate-300">Modifier</span>
-            </button>
-          </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="mx-auto mt-10 grid max-w-6xl items-stretch gap-6 md:grid-cols-3">
           {pricingPlans.map((plan) => {
             const isPro = plan.highlight;
             return (
               <div
                 key={plan.id}
-                className={`flex flex-col justify-between rounded-2xl p-6 sm:p-8 bg-white border transition-all ${
-                  isPro
-                    ? 'border-slate-900 shadow-md ring-2 ring-slate-900 relative'
-                    : 'border-slate-200 shadow-xs hover:border-slate-300'
+                className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 sm:p-8 ${
+                  isPro ? 'border-brand-700 shadow-xl ring-2 ring-brand-700' : 'border-slate-200'
                 }`}
               >
                 {isPro && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-3.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
-                    Recommandé
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
+                    Le plus choisi
                   </span>
                 )}
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-extrabold text-slate-900">{plan.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1 min-h-[32px] leading-relaxed">{plan.description}</p>
+                <div>
+                  <h3 className="font-display text-xl font-bold text-slate-900">{plan.name}</h3>
+                  <p className="mt-1 min-h-[40px] text-sm text-slate-600">{plan.description}</p>
+                  <div className="mt-5 flex items-baseline gap-1.5">
+                    <span className="text-4xl font-extrabold text-slate-900">{plan.formattedPrice}</span>
+                    {plan.price > 0 && <span className="text-sm text-slate-500">/ {plan.period}</span>}
                   </div>
-
-                  <div className="pt-2 pb-4 border-b border-slate-100">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl sm:text-4xl font-black text-slate-900">
-                        {plan.formattedPrice}
-                      </span>
-                      {plan.price > 0 && (
-                        <span className="text-xs text-slate-500 font-medium">/ {plan.period}</span>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-md inline-block mt-2">
-                      Capacité : {plan.max_properties > 1000 ? 'Biens & Chambres illimités' : `Jusqu'à ${plan.max_properties} logements`}
-                    </span>
-                  </div>
-
-                  {/* Features */}
-                  <ul className="space-y-2.5 text-xs text-slate-600">
+                  <p className="mt-2 inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                    {plan.max_properties > 1000 ? 'Biens et chambres illimités' : `Jusqu'à ${plan.max_properties} logements`}
+                  </p>
+                  <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                     {plan.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
                         <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-
-                <div className="pt-6">
-                  <Button
-                    onClick={() => navigate(`/auth/register?plan=${plan.id}`)}
-                    variant={isPro ? 'primary' : 'outline'}
-                    size="md"
-                    className="w-full font-bold text-xs"
-                  >
-                    {plan.price === 0 ? 'Commencer Gratuitement' : `Choisir ${plan.name}`}
-                  </Button>
-                </div>
+                <Link
+                  to={`/register?plan=${plan.id}`}
+                  className={`mt-8 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+                    isPro
+                      ? 'bg-brand-700 text-white hover:bg-brand-800'
+                      : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  {plan.price === 0 ? 'Commencer gratuitement' : `Choisir ${plan.name}`}
+                </Link>
               </div>
             );
           })}
         </div>
 
-        {/* Link to Full Pricing */}
-        <div className="text-center pt-2">
-          <Link
-            to="/pricing"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900"
-          >
-            <span>Voir le tableau comparatif complet et tous les détails des forfaits</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+        <p className="mt-8 text-center text-sm">
+          <Link to="/pricing" className="font-semibold text-brand-700 underline underline-offset-4 hover:text-brand-800">
+            Comparer tous les forfaits en détail
           </Link>
-        </div>
+        </p>
+      </section>
 
-        {/* Payment Methods Badges */}
-        <div className="max-w-3xl mx-auto rounded-2xl bg-white border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-emerald-600 shrink-0" />
-            <span className="font-semibold text-slate-800">
-              Moyens de paiement acceptés :
-            </span>
+      {/* 6. FAQ */}
+      <section className="bg-sand-50 py-16 lg:py-20" aria-labelledby="titre-faq">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 id="titre-faq" className="text-center text-3xl font-bold text-slate-900 sm:text-4xl">Questions fréquentes</h2>
+          <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+            {FAQ.map((item) => (
+              <details key={item.q} className="group px-5 py-4 sm:px-6">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
+                  {item.q}
+                  <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.a}</p>
+              </details>
+            ))}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-medium text-slate-700">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-semibold">Wave</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-semibold">Orange Money</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-semibold">MTN MoMo</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-semibold">Moov Money</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 font-semibold">Cartes Bancaires</span>
-          </div>
+          <p className="mt-6 text-center text-sm text-slate-600">
+            Une autre question ?{' '}
+            <Link to="/contact" className="font-semibold text-brand-700 underline underline-offset-4">Écrivez-nous</Link>
+          </p>
         </div>
       </section>
 
-      {/* 5. Verification & Security Section */}
-      <section className="bg-slate-900 text-white py-14 px-4 sm:px-6 lg:px-8 border-y border-slate-800">
-        <div className="mx-auto max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-10">
-          <div className="space-y-4 max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Contrôle & Sécurité
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Pourquoi exiger l'envoi de pièces d'identité et documents officiels ?
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Pour protéger locataires et investisseurs, LoyerPro audite manuellement chaque inscription de bailleur. Fini les faux mandataires et les escroqueries de caution : seuls les comptes validés obtiennent le badge vert de publication.
-            </p>
-          </div>
-
-          <div className="shrink-0 flex flex-col sm:flex-row gap-3">
-            <Link to="/about#verification">
-              <Button
-                variant="outline-white"
-                size="md"
-                className="font-medium text-white bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-slate-500"
-              >
-                En savoir plus sur la vérification
-              </Button>
+      {/* 7. CTA final */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div className="mx-auto max-w-5xl rounded-[2rem] bg-brand-950 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
+          <h2 className="text-3xl font-bold sm:text-4xl">Prêt à louer ou à gérer sans tracas ?</h2>
+          <p className="mx-auto mt-4 max-w-xl text-brand-100">
+            Créez votre compte en quelques minutes. Le forfait gratuit suffit pour publier votre premier bien.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-brand-900 hover:bg-brand-50">
+              Créer mon compte
+              <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Link>
-            <Link to="/auth/register">
-              <Button
-                variant="primary"
-                size="md"
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold border-transparent"
-              >
-                Commencer mon inscription
-              </Button>
+            <Link to="/properties" className="inline-flex items-center justify-center rounded-xl border border-white/30 px-6 py-3.5 text-base font-semibold text-white hover:bg-white/10">
+              Chercher un logement
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 6. Contact & Support Client Banner */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
-          <div className="space-y-1.5 text-center md:text-left">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Assistance & Support Client
-            </p>
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900">
-              Besoin d'aide ou d'un renseignement sur un logement ?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
-              Notre équipe d'assistance vous répond 7j/7 par WhatsApp, email ou formulaire direct.
-            </p>
-          </div>
-          <div className="shrink-0 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/contact">
-              <Button variant="primary" size="md" className="font-semibold text-xs">
-                <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-                <span>Accéder à la page Contact</span>
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Modal */}
-      <LocationSelectorModal
-        isOpen={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
-      />
-    </div>
+      <LocationSelectorModal isOpen={locationModalOpen} onClose={() => setLocationModalOpen(false)} />
+    </>
   );
 }

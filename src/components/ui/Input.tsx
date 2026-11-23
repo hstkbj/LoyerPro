@@ -10,30 +10,33 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
     const inputId = id || props.name;
+    const messageId = inputId ? `${inputId}-message` : undefined;
 
     return (
       <div className="w-full space-y-1.5 text-left">
         {label && (
           <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
             {label}
-            {props.required && <span className="text-rose-500 ml-1">*</span>}
+            {props.required && <span className="text-rose-500 ml-1" aria-hidden="true">*</span>}
           </label>
         )}
         <input
           id={inputId}
           ref={ref}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || helperText ? messageId : undefined}
           className={cn(
-            'flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 transition-colors',
-            error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500',
+            'flex h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 transition-colors',
+            error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20',
             className
           )}
           {...props}
         />
         {helperText && !error && (
-          <p className="text-xs text-slate-500">{helperText}</p>
+          <p id={messageId} className="text-xs text-slate-500">{helperText}</p>
         )}
         {error && (
-          <p className="text-xs font-medium text-rose-600">{error}</p>
+          <p id={messageId} role="alert" className="text-xs font-medium text-rose-600">{error}</p>
         )}
       </div>
     );
