@@ -11,16 +11,11 @@ import { Seo } from '../../components/seo/Seo';
 import { SITE, absoluteUrl } from '../../lib/site';
 import {
   Search,
-  ShieldCheck,
   ArrowRight,
   MapPin,
   Check,
   FileText,
-  Wallet,
-  Receipt,
   KeyRound,
-  BadgeCheck,
-  Eye,
   ChevronDown,
   Building2,
 } from 'lucide-react';
@@ -163,12 +158,8 @@ export function HomePage() {
       <section className="relative overflow-hidden bg-sand-50">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 pb-16 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14 lg:px-8 lg:pb-24 lg:pt-20">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-semibold text-brand-800">
-              <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-              Bailleurs vérifiés par notre équipe
-            </p>
-            <h1 className="mt-5 text-4xl font-bold leading-[1.1] text-slate-900 sm:text-5xl lg:text-6xl">
-              Louez un logement <span className="text-brand-700">en toute confiance</span>
+            <h1 className="mt-5 text-4xl font-bold leading-[1.1] text-slate-900 sm:text-5xl lg:text-5xl">
+              Trouvez un logement auprès de bailleurs dont l'identité est vérifiée
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
               Chambres, studios et appartements publiés par des bailleurs dont l'identité a été contrôlée. Et pour
@@ -178,7 +169,7 @@ export function HomePage() {
             <form
               onSubmit={handleSearch}
               aria-label="Rechercher un logement"
-              className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-900/5 sm:p-5"
+              className="mt-8 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -235,7 +226,7 @@ export function HomePage() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-700 px-5 py-3 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-brand-700 px-5 py-3 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
               >
                 Je suis propriétaire : publier mon bien
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -247,7 +238,7 @@ export function HomePage() {
           </div>
 
           <div className="relative hidden lg:block">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-brand-100 shadow-2xl shadow-brand-900/10">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-brand-100 shadow-sm">
               <img
                 src={HERO_IMAGE}
                 alt="Façade d'un immeuble résidentiel moderne"
@@ -258,15 +249,6 @@ export function HomePage() {
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute -left-8 bottom-10 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                <ShieldCheck className="h-6 w-6" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-slate-900">Identité contrôlée</p>
-                <p className="text-xs text-slate-500">CNI ou passeport examinés</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -275,15 +257,12 @@ export function HomePage() {
       <section className="border-y border-slate-200 bg-white">
         <ul className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
           {[
-            { icon: ShieldCheck, title: 'Bailleurs vérifiés', text: "Pièce d'identité examinée avant publication." },
-            { icon: Eye, title: 'Annonces transparentes', text: 'Loyer, charges et conditions affichés clairement.' },
-            { icon: Receipt, title: 'Quittances en PDF', text: 'Générées automatiquement pour chaque loyer.' },
-            { icon: Wallet, title: 'Paiement simple', text: 'Mobile Money et cartes bancaires pour les abonnements.' },
-          ].map(({ icon: Icon, title, text }) => (
-            <li key={title} className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </span>
+            { title: 'Bailleurs vérifiés', text: "Pièce d'identité examinée avant publication." },
+            { title: 'Annonces transparentes', text: 'Loyer, charges et conditions affichés clairement.' },
+            { title: 'Quittances en PDF', text: 'Générées automatiquement pour chaque loyer.' },
+            { title: 'Paiement simple', text: 'Mobile Money et cartes bancaires pour les abonnements.' },
+          ].map(({ title, text }) => (
+            <li key={title} className="border-l-2 border-brand-700 pl-4">
               <div>
                 <p className="text-sm font-bold text-slate-900">{title}</p>
                 <p className="mt-0.5 text-sm text-slate-600">{text}</p>
@@ -297,7 +276,6 @@ export function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20" aria-labelledby="titre-annonces">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-brand-700">Annonces récentes</p>
             <h2 id="titre-annonces" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
               Disponibles en {currentCountry.name}
             </h2>
@@ -311,7 +289,7 @@ export function HomePage() {
         {loading ? (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+              <div key={i} className="h-72 animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
             ))}
           </div>
         ) : properties.length > 0 ? (
@@ -321,7 +299,7 @@ export function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-sand-50 p-10 text-center sm:p-14">
+          <div className="mt-8 rounded-lg border border-dashed border-slate-300 bg-sand-50 p-10 text-center sm:p-14">
             <Building2 className="mx-auto h-10 w-10 text-slate-400" aria-hidden="true" />
             <h3 className="mt-4 text-lg font-bold text-slate-900">
               Aucune annonce publiée en {currentCountry.name} pour le moment
@@ -333,11 +311,11 @@ export function HomePage() {
               <button
                 type="button"
                 onClick={() => setLocationModalOpen(true)}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
               >
                 Changer de pays ou de ville
               </button>
-              <Link to="/register" className="rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
+              <Link to="/register" className="rounded-md bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
                 Publier un bien
               </Link>
             </div>
@@ -349,14 +327,13 @@ export function HomePage() {
       <section className="bg-sand-50 py-16 lg:py-20" aria-labelledby="titre-etapes">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold text-brand-700">Comment ça marche</p>
             <h2 id="titre-etapes" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
               Deux parcours, un même niveau de confiance
             </h2>
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-8">
               <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900">
                 <KeyRound className="h-5 w-5 text-brand-700" aria-hidden="true" />
                 Je cherche un logement
@@ -368,7 +345,7 @@ export function HomePage() {
                   ['Je contacte', 'Je demande des renseignements ou une visite, gratuitement.'],
                 ].map(([t, d], i) => (
                   <li key={t} className="flex gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">{i + 1}</span>
+                    <span className="w-6 shrink-0 text-lg font-semibold text-brand-700">{i + 1}.</span>
                     <div>
                       <p className="font-semibold text-slate-900">{t}</p>
                       <p className="text-sm text-slate-600">{d}</p>
@@ -376,13 +353,13 @@ export function HomePage() {
                   </li>
                 ))}
               </ol>
-              <Link to="/properties" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
+              <Link to="/properties" className="mt-7 inline-flex items-center gap-2 rounded-md bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
                 Parcourir les logements
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
 
-            <div className="rounded-3xl bg-brand-950 p-6 text-white sm:p-8">
+            <div className="rounded-lg bg-brand-950 p-6 text-white sm:p-8">
               <h3 className="flex items-center gap-2 text-xl font-bold">
                 <FileText className="h-5 w-5 text-brand-300" aria-hidden="true" />
                 Je loue mes biens
@@ -394,7 +371,7 @@ export function HomePage() {
                   ['Je gère', 'Contrats, loyers, dépenses et quittances depuis mon espace.'],
                 ].map(([t, d], i) => (
                   <li key={t} className="flex gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-300 text-sm font-bold text-brand-950">{i + 1}</span>
+                    <span className="w-6 shrink-0 text-lg font-semibold text-brand-300">{i + 1}.</span>
                     <div>
                       <p className="font-semibold">{t}</p>
                       <p className="text-sm text-slate-300">{d}</p>
@@ -402,7 +379,7 @@ export function HomePage() {
                   </li>
                 ))}
               </ol>
-              <Link to="/register" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-900 hover:bg-brand-50">
+              <Link to="/register" className="mt-7 inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-900 hover:bg-brand-50">
                 Créer mon compte gratuitement
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -414,7 +391,6 @@ export function HomePage() {
       {/* 5. Tarifs */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20" aria-labelledby="titre-tarifs">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-brand-700">Tarifs</p>
           <h2 id="titre-tarifs" className="mt-1 text-3xl font-bold text-slate-900 sm:text-4xl">
             Un forfait pour chaque taille de parc
           </h2>
@@ -429,14 +405,12 @@ export function HomePage() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 sm:p-8 ${
-                  isPro ? 'border-brand-700 shadow-xl ring-2 ring-brand-700' : 'border-slate-200'
+                className={`relative flex flex-col justify-between rounded-lg border bg-white p-6 sm:p-8 ${
+                  isPro ? 'border-brand-700 border-2' : 'border-slate-200'
                 }`}
               >
                 {isPro && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
-                    Le plus choisi
-                  </span>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-brand-700">Le plus choisi</p>
                 )}
                 <div>
                   <h3 className="font-display text-xl font-bold text-slate-900">{plan.name}</h3>
@@ -459,7 +433,7 @@ export function HomePage() {
                 </div>
                 <Link
                   to={`/register?plan=${plan.id}`}
-                  className={`mt-8 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+                  className={`mt-8 inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold transition-colors ${
                     isPro
                       ? 'bg-brand-700 text-white hover:bg-brand-800'
                       : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
@@ -483,7 +457,7 @@ export function HomePage() {
       <section className="bg-sand-50 py-16 lg:py-20" aria-labelledby="titre-faq">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <h2 id="titre-faq" className="text-center text-3xl font-bold text-slate-900 sm:text-4xl">Questions fréquentes</h2>
-          <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+          <div className="mt-10 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
             {FAQ.map((item) => (
               <details key={item.q} className="group px-5 py-4 sm:px-6">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">
@@ -503,17 +477,17 @@ export function HomePage() {
 
       {/* 7. CTA final */}
       <section className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-5xl rounded-[2rem] bg-brand-950 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
+        <div className="mx-auto max-w-5xl rounded-lg bg-brand-950 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
           <h2 className="text-3xl font-bold sm:text-4xl">Prêt à louer ou à gérer sans tracas ?</h2>
           <p className="mx-auto mt-4 max-w-xl text-brand-100">
             Créez votre compte en quelques minutes. Le forfait gratuit suffit pour publier votre premier bien.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-brand-900 hover:bg-brand-50">
+            <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-6 py-3.5 text-base font-semibold text-brand-900 hover:bg-brand-50">
               Créer mon compte
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Link>
-            <Link to="/properties" className="inline-flex items-center justify-center rounded-xl border border-white/30 px-6 py-3.5 text-base font-semibold text-white hover:bg-white/10">
+            <Link to="/properties" className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 py-3.5 text-base font-semibold text-white hover:bg-white/10">
               Chercher un logement
             </Link>
           </div>

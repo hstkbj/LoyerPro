@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Property } from '../../types';
 import { useGeo } from '../../contexts/GeoContext';
-import { MapPin, Bed, Bath, Maximize2, Building, ShieldCheck, Check, Zap } from 'lucide-react';
+import { MapPin, Bed, Bath, Maximize2, Building, ShieldCheck, Check } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 
 interface PropertyCardProps {
@@ -18,7 +18,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const isVerified = property.owner_verified || property.owner?.is_verified || property.owner?.verification_status === 'verified';
 
   return (
-    <div className="group flex flex-col rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs hover:border-slate-300 hover:shadow-md transition-all">
+    <div className="group flex flex-col rounded-lg border border-slate-200/90 bg-white overflow-hidden shadow-2xs hover:border-slate-300 hover:shadow-md transition-all">
       {/* Thumbnail */}
       <Link to={`/properties/${property.slug || property.id}`} className="relative block aspect-16/10 bg-slate-100 overflow-hidden">
         {photoUrl ? (
@@ -41,7 +41,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         {/* Badges on image */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <Badge variant="default" className="bg-white/95 text-slate-900 backdrop-blur-xs font-bold text-[11px] shadow-2xs">
+          <Badge variant="default" className="bg-white/95 text-slate-900 font-bold text-[11px] shadow-2xs">
             {property.type}
           </Badge>
           {isVerified && (
@@ -63,8 +63,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
         {property.charges_included && (
           <div className="absolute bottom-2.5 left-3">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900/80 text-white backdrop-blur-xs">
-              <Zap className="h-2.5 w-2.5 text-amber-300" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900/80 text-white">
               Charges comprises
             </span>
           </div>

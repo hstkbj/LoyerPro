@@ -82,6 +82,25 @@ function saveLocalTx(items: Transaction[]) {
   }
 }
 
+// Secours : lecture de l'abonnement via notre propre serveur quand le navigateur
+// ne parvient pas à joindre Supabase directement (coupures réseau).
+async function fetchSubscriptionViaApi(): Promise<Subscription | null | undefined> {
+  try {
+    const supabase = getSupabase();
+    const { data: { session } } = (await supabase?.auth.getSession()) || { data: { session: null } };
+    if (!session?.access_token) return undefined;
+    const res = await fetch('/api/subscription/me', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      cache: 'no-store',
+    });
+    if (!res.ok) return undefined;
+    const json = await res.json();
+    return (json?.subscription as Subscription) || null;
+  } catch {
+    return undefined;
+  }
+}
+
 const inFlightUserSubs = new Map<string, Promise<Subscription | null>>();
 
 export const subscriptionService = {
@@ -186,6 +205,8 @@ export const subscriptionService = {
 
           if (error) {
             console.warn('[subscriptionService] getUserSubscription notice:', error.message);
+            const viaApi = await fetchSubscriptionViaApi();
+            if (viaApi !== undefined) return viaApi;
             const localItems = getLocalSubs().filter(s => s.user_id === userId);
             if (localItems.length > 0) {
               const sub = localItems[0];
@@ -197,6 +218,8 @@ export const subscriptionService = {
           return (data as Subscription) || null;
         } catch (err: any) {
           console.warn('[subscriptionService] getUserSubscription network notice:', err?.message);
+          const viaApi = await fetchSubscriptionViaApi();
+          if (viaApi !== undefined) return viaApi;
           const localItems = getLocalSubs().filter(s => s.user_id === userId);
           if (localItems.length > 0) {
             const sub = localItems[0];

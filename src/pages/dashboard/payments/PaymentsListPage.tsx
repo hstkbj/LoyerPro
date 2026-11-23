@@ -98,7 +98,7 @@ export function PaymentsListPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-16 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : payments.length === 0 ? (
@@ -110,11 +110,11 @@ export function PaymentsListPage() {
           onAction={() => navigate('/dashboard/payments/create')}
         />
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
+        <div className="rounded-md border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
           Aucun paiement ne correspond à "{search}".
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-xs">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-semibold text-slate-600">
               <tr>

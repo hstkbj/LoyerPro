@@ -64,7 +64,7 @@ export function SuperAdminDashboardPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Utilisateurs</span>
             <Users className="h-4 w-4 text-slate-400" />
@@ -73,7 +73,7 @@ export function SuperAdminDashboardPage() {
           <p className="text-[11px] text-slate-400">Bailleurs & Cabinets inscrits</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Biens</span>
             <Building className="h-4 w-4 text-slate-400" />
@@ -82,7 +82,7 @@ export function SuperAdminDashboardPage() {
           <p className="text-[11px] text-slate-400">{publishedCount} en ligne sur le portail</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Abonnements</span>
             <CreditCard className="h-4 w-4 text-brand-600" />
@@ -91,7 +91,7 @@ export function SuperAdminDashboardPage() {
           <p className="text-[11px] text-slate-400">Forfaits actifs réels</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Infrastructure</span>
             <Database className="h-4 w-4 text-amber-500" />
@@ -102,7 +102,7 @@ export function SuperAdminDashboardPage() {
       </div>
 
       {/* Security & RLS Status Notice */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-3">
+      <div className="rounded-md border border-slate-200 bg-white p-6 shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-brand-700 font-bold text-sm">
           <ShieldCheck className="h-5 w-5" />
           <span>Protection des données des bailleurs & Politiques RLS</span>

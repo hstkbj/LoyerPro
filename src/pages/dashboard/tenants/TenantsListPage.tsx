@@ -95,7 +95,7 @@ export function TenantsListPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-20 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : tenants.length === 0 ? (
@@ -107,11 +107,11 @@ export function TenantsListPage() {
           onAction={() => navigate('/dashboard/tenants/create')}
         />
       ) : filteredTenants.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
+        <div className="rounded-md border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
           Aucun locataire ne correspond à "{search}".
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-xs">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-semibold text-slate-600">
               <tr>

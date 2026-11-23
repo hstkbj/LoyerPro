@@ -37,13 +37,13 @@ export function SuperAdminPaymentsPage() {
       </div>
 
       {loading ? (
-        <div className="h-48 rounded-xl bg-slate-200 animate-pulse" />
+        <div className="h-48 rounded-md bg-slate-200 animate-pulse" />
       ) : payments.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
+        <div className="rounded-md border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
           Aucun paiement dans la base de données.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-xs">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-semibold text-slate-600">
               <tr>

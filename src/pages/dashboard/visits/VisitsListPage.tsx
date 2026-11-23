@@ -58,7 +58,7 @@ export function VisitsListPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-20 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : visits.length === 0 ? (
@@ -72,7 +72,7 @@ export function VisitsListPage() {
           {visits.map((visit) => (
             <div
               key={visit.id}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="rounded-md border border-slate-200 bg-white p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">

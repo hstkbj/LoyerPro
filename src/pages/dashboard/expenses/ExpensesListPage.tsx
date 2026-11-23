@@ -74,7 +74,7 @@ export function ExpensesListPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-16 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : expenses.length === 0 ? (
@@ -86,7 +86,7 @@ export function ExpensesListPage() {
           onAction={() => navigate('/dashboard/expenses/create')}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-xs">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-semibold text-slate-600">
               <tr>

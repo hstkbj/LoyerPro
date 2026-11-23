@@ -82,7 +82,7 @@ export function ContractsListPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-24 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : contracts.length === 0 ? (
@@ -98,7 +98,7 @@ export function ContractsListPage() {
           {contracts.map((contract) => (
             <div
               key={contract.id}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between"
+              className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-3 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">

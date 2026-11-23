@@ -20,10 +20,8 @@ import {
   Building,
   Check,
   ShieldCheck,
-  Zap,
   Droplets,
   Wifi,
-  Sparkles,
   Info,
 } from 'lucide-react';
 
@@ -59,7 +57,7 @@ export function PropertyDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-12">
-        <div className="h-96 rounded-2xl bg-slate-200 animate-pulse mb-6" />
+        <div className="h-96 rounded-lg bg-slate-200 animate-pulse mb-6" />
         <div className="h-8 w-1/2 rounded bg-slate-200 animate-pulse mb-4" />
         <div className="h-4 w-1/4 rounded bg-slate-200 animate-pulse" />
       </div>
@@ -111,7 +109,7 @@ export function PropertyDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Main Photo Gallery */}
           <div className="space-y-2">
-            <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+            <div className="relative aspect-16/10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
               {currentPhoto ? (
                 <img
                   src={currentPhoto}
@@ -150,8 +148,7 @@ export function PropertyDetailPage() {
 
               {property.charges_included && (
                 <div className="absolute bottom-3 left-4">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-900/90 text-white backdrop-blur-xs">
-                    <Zap className="h-3.5 w-3.5 text-amber-300" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-900/90 text-white">
                     Charges comprises dans le loyer
                   </span>
                 </div>
@@ -165,7 +162,7 @@ export function PropertyDetailPage() {
                   <button
                     key={idx}
                     onClick={() => setSelectedPhotoIndex(idx)}
-                    className={`relative h-18 w-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                    className={`relative h-18 w-24 shrink-0 rounded-md overflow-hidden border-2 transition-all ${
                       selectedPhotoIndex === idx ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
@@ -195,30 +192,30 @@ export function PropertyDetailPage() {
             {/* Key specs pills */}
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-700">
               {property.bedrooms > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-100 font-semibold">
                   <Bed className="h-4 w-4 text-slate-500" />
                   <span>{property.bedrooms} Chambre{property.bedrooms > 1 ? 's' : ''}</span>
                 </div>
               )}
               {property.bathroom_type ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-100 font-semibold">
                   <Bath className="h-4 w-4 text-slate-500" />
                   <span>{property.bathroom_type === 'private' ? 'Salle d’eau privée' : 'Salle d’eau partagée'}</span>
                 </div>
               ) : property.bathrooms > 0 ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-100 font-semibold">
                   <Bath className="h-4 w-4 text-slate-500" />
                   <span>{property.bathrooms} Salle{property.bathrooms > 1 ? 's' : ''} d'eau</span>
                 </div>
               ) : null}
               {property.surface && property.surface > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-100 font-semibold">
                   <Maximize2 className="h-4 w-4 text-slate-500" />
                   <span>{property.surface} m²</span>
                 </div>
               )}
               {property.deposit_months && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 border border-brand-200 font-semibold">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-50 text-brand-800 border border-brand-200 font-semibold">
                   <span>Caution : {property.deposit_months} mois</span>
                 </div>
               )}
@@ -242,7 +239,7 @@ export function PropertyDetailPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {property.kitchen_type && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-500">Cuisine :</span>
                   <span className="font-semibold text-slate-800">
                     {property.kitchen_type === 'private' ? 'Cuisine privée / kitchenette' : property.kitchen_type === 'shared' ? 'Cuisine partagée' : 'Pas de cuisine'}
@@ -250,7 +247,7 @@ export function PropertyDetailPage() {
                 </div>
               )}
               {property.water_source && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-500 flex items-center gap-1">
                     <Droplets className="h-3.5 w-3.5 text-blue-500" />
                     Alimentation Eau :
@@ -259,16 +256,15 @@ export function PropertyDetailPage() {
                 </div>
               )}
               {property.electricity_meter && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-500 flex items-center gap-1">
-                    <Zap className="h-3.5 w-3.5 text-amber-500" />
                     Compteur électricité :
                   </span>
                   <span className="font-semibold text-slate-800">{property.electricity_meter}</span>
                 </div>
               )}
               {property.wifi_speed && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="p-3 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-500 flex items-center gap-1">
                     <Wifi className="h-3.5 w-3.5 text-indigo-500" />
                     Connexion Internet :
@@ -296,7 +292,7 @@ export function PropertyDetailPage() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                 Conditions de bail & modalités d'entrée
               </h2>
-              <div className="text-xs text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-200 leading-relaxed">
+              <div className="text-xs text-slate-600 bg-slate-50 p-4 rounded-md border border-slate-200 leading-relaxed">
                 {property.conditions}
               </div>
             </div>
@@ -305,7 +301,7 @@ export function PropertyDetailPage() {
 
         {/* Right Column: Price Card & Contact CTAs */}
         <div className="space-y-4">
-          <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+          <div className="sticky top-24 rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-6">
             <div>
               <span className="text-xs text-slate-500 block font-semibold uppercase tracking-wider">
                 Loyer mensuel
@@ -342,7 +338,7 @@ export function PropertyDetailPage() {
 
               <button
                 onClick={handleShareWhatsApp}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors border border-brand-200"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 rounded-md transition-colors border border-brand-200"
               >
                 <Share2 className="h-4 w-4 text-brand-600" />
                 Partager cette chambre sur WhatsApp
@@ -351,7 +347,7 @@ export function PropertyDetailPage() {
 
             {/* Landlord / Agency Info & Verification Badge */}
             <div className="pt-4 border-t border-slate-100 space-y-3">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
                   <ShieldCheck className="h-4 w-4 text-brand-600 shrink-0" />
                   <span>

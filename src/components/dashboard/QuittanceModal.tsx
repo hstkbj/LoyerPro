@@ -30,7 +30,7 @@ export function QuittanceModal({ isOpen, onClose, payment }: QuittanceModalProps
     >
       <div className="space-y-6">
         {/* Printable Area */}
-        <div id="printable-quittance" className="rounded-xl border border-slate-300 bg-white p-6 sm:p-8 space-y-6 text-xs text-slate-800">
+        <div id="printable-quittance" className="rounded-md border border-slate-300 bg-white p-6 sm:p-8 space-y-6 text-xs text-slate-800">
           {/* Header */}
           <div className="flex justify-between items-start border-b border-slate-200 pb-4">
             <div>

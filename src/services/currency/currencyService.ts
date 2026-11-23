@@ -102,7 +102,7 @@ export const SUPPORTED_COUNTRIES: CountryConfig[] = [
   {
     code: 'GLOBAL',
     name: 'International (Tous pays)',
-    flag: '🌍',
+    flag: '',
     currency: 'EUR',
     currencySymbol: '€',
     phonePrefix: '+',

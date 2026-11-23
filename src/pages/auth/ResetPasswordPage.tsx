@@ -66,7 +66,7 @@ export function ResetPasswordPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white py-8 px-6 sm:px-10 rounded-lg border border-slate-200 shadow-sm">
           {sent ? (
             <div className="text-center space-y-4">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">

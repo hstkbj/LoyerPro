@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Lock,
   FileCheck,
-  Sparkles,
   ArrowRight,
   Globe,
   Award,
@@ -37,8 +36,7 @@ export function AboutPage() {
           />
         </div>
         <div className="relative mx-auto max-w-5xl text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/90 px-4 py-1.5 text-xs text-slate-300 backdrop-blur-xs">
-            <span className="h-2 w-2 rounded-full bg-brand-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/90 px-4 py-1.5 text-xs text-slate-300">
             <span>La plateforme immobilière de référence internationale</span>
           </div>
 
@@ -85,7 +83,7 @@ export function AboutPage() {
               Pour les propriétaires et les agences, le recouvrement manuel des loyers, la gestion des impayés et la rédaction des quittances représentent des heures de stress répétitif.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
+              <div className="p-4 rounded-md border border-slate-200 bg-white shadow-2xs">
                 <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-brand-600" />
                   100% Vérifié
@@ -94,7 +92,7 @@ export function AboutPage() {
                   Chaque bailleur soumet sa pièce d'identité ou son registre de commerce avant de certifier ses biens.
                 </p>
               </div>
-              <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs">
+              <div className="p-4 rounded-md border border-slate-200 bg-white shadow-2xs">
                 <div className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-brand-600" />
                   Quittances avec QR code
@@ -106,7 +104,7 @@ export function AboutPage() {
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200 aspect-4/3">
+          <div className="relative rounded-lg overflow-hidden shadow-sm border border-slate-200 aspect-4/3">
             <img
               src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70&fm=webp"
               alt="Intérieur moderne de chambre et studio"
@@ -138,9 +136,9 @@ export function AboutPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* 1. Locataires */}
-            <div className="rounded-2xl bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
+            <div className="rounded-lg bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-xl bg-brand-100 text-brand-800 flex items-center justify-center font-bold">
+                <div className="h-12 w-12 rounded-md bg-brand-100 text-brand-800 flex items-center justify-center font-bold">
                   <Users className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Pour les Locataires</h3>
@@ -170,9 +168,9 @@ export function AboutPage() {
             </div>
 
             {/* 2. Propriétaires Bailleurs */}
-            <div className="rounded-2xl bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
+            <div className="rounded-lg bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+                <div className="h-12 w-12 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold">
                   <Building2 className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Pour les Propriétaires</h3>
@@ -202,9 +200,9 @@ export function AboutPage() {
             </div>
 
             {/* 3. Agences & Gestionnaires */}
-            <div className="rounded-2xl bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
+            <div className="rounded-lg bg-white p-7 border border-slate-200 shadow-xs flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+                <div className="h-12 w-12 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
                   <Award className="h-6 w-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Pour les Cabinets & Agences</h3>
@@ -238,7 +236,7 @@ export function AboutPage() {
 
       {/* 4. Processus de Vérification d'Identité Strict */}
       <section id="verification" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 lg:p-16 relative overflow-hidden">
+        <div className="rounded-lg bg-slate-900 text-white p-8 sm:p-12 lg:p-16 relative overflow-hidden">
           <div className="relative z-10 max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3.5 py-1 text-xs text-brand-400">
               <ShieldCheck className="h-4 w-4" />
@@ -297,19 +295,19 @@ export function AboutPage() {
       {/* 5. Chiffres Clés & Portée Internationale */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-2xs">
             <div className="text-3xl sm:text-4xl font-extrabold text-slate-900">10+</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Pays couverts</div>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-2xs">
             <div className="text-3xl sm:text-4xl font-extrabold text-brand-600">100%</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Quittances vérifiées</div>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-2xs">
             <div className="text-3xl sm:text-4xl font-extrabold text-slate-900">24h</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Délai moyen de validation</div>
           </div>
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-2xs">
             <div className="text-3xl sm:text-4xl font-extrabold text-slate-900">6</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Devises prises en charge</div>
           </div>
@@ -324,7 +322,7 @@ export function AboutPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
+          <div className="rounded-md border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               La recherche et la prise de contact pour les locataires sont-elles gratuites ?
@@ -334,7 +332,7 @@ export function AboutPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
+          <div className="rounded-md border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               Quels documents dois-je fournir pour valider mon compte propriétaire ?
@@ -344,7 +342,7 @@ export function AboutPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
+          <div className="rounded-md border border-slate-200 bg-white p-5 shadow-2xs space-y-2">
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <HelpCircle className="h-4 w-4 text-brand-600 shrink-0" />
               Dans quelles devises s'effectuent les paiements ?
@@ -358,7 +356,7 @@ export function AboutPage() {
 
       {/* 7. Call To Action Final */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 text-center space-y-6">
+        <div className="rounded-lg bg-slate-900 text-white p-8 sm:p-12 text-center space-y-6">
           <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             Prêt à transformer votre gestion locative ?
           </h3>

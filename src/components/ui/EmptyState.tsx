@@ -20,7 +20,7 @@ export function EmptyState({
   secondaryAction,
 }: EmptyStateProps) {
   return (
-    <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-xs">
+    <div className="flex min-h-[300px] flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-8 text-center shadow-xs">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 mb-4">
         {Icon ? <Icon className="h-6 w-6" /> : <PlusCircle className="h-6 w-6" />}
       </div>

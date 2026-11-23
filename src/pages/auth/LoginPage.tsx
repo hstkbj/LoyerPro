@@ -77,7 +77,7 @@ export function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white py-8 px-6 sm:px-10 rounded-lg border border-slate-200 shadow-sm">
           {error && (
             <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
               {error}

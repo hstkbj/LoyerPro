@@ -37,12 +37,12 @@ export function LocationSelectorModal({ isOpen, onClose }: LocationSelectorModal
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60">
+      <div className="relative w-full max-w-lg rounded-lg bg-white shadow-sm border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-white">
               <Globe className="h-5 w-5" />
             </div>
             <div>
@@ -61,7 +61,7 @@ export function LocationSelectorModal({ isOpen, onClose }: LocationSelectorModal
         {/* Content */}
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Localized filtering toggle */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex items-center justify-between gap-4">
+          <div className="rounded-md border border-slate-200 bg-slate-50/80 p-3.5 flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-brand-600" />
@@ -103,7 +103,7 @@ export function LocationSelectorModal({ isOpen, onClose }: LocationSelectorModal
                       setSelectedCity(c.cities[0] || 'Toutes');
                       setSelectedCurrency(c.currency);
                     }}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
+                    className={`flex items-center gap-2 p-2.5 rounded-md border text-left text-xs font-medium transition-all ${
                       isSelected
                         ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300'

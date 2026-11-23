@@ -151,6 +151,7 @@ export async function verifyFedaPayTransaction(transactionId: number | string): 
   approved: boolean;
   pending?: boolean;
   activated?: boolean;
+  subscription?: any;
   simulated?: boolean;
   status?: string;
   error?: string;
@@ -190,6 +191,7 @@ export async function verifyFedaPayTransaction(transactionId: number | string): 
       approved: Boolean(data?.approved),
       pending: Boolean(data?.pending),
       activated: Boolean(data?.activated),
+      subscription: data?.subscription,
       status: data?.status,
       simulated: Boolean(data?.simulated),
       notice: data?.notice,

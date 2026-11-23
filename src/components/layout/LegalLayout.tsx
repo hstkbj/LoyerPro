@@ -36,7 +36,7 @@ export function LegalLayout({ title, intro, path, sections }: LegalLayoutProps) 
 
       <div className="mx-auto grid max-w-5xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[230px_1fr] lg:px-8 lg:py-14">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <nav aria-label="Sommaire" className="rounded-2xl border border-slate-200 bg-white p-4">
+          <nav aria-label="Sommaire" className="rounded-lg border border-slate-200 bg-white p-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Sommaire</p>
             <ol className="space-y-1.5 text-sm">
               {sections.map((s, i) => (

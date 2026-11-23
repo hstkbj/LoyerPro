@@ -129,7 +129,6 @@ export function ContactPage() {
 
       <section className="border-b border-slate-200 bg-sand-50">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <p className="text-sm font-semibold text-brand-700">Contact</p>
           <h1 className="mt-1 text-3xl font-bold text-slate-900 sm:text-5xl">Comment pouvons-nous vous aider ?</h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-600">
             Une question sur une annonce, la vérification d'un compte bailleur ou vos quittances ? Écrivez-nous, nous
@@ -139,10 +138,10 @@ export function ContactPage() {
       </section>
 
       <section className="mx-auto grid max-w-5xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_1fr] lg:px-8 lg:py-16">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-8">
           {ticket ? (
             <div className="py-8 text-center" role="status">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                 <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
               </span>
               <h2 className="mt-5 text-2xl font-bold text-slate-900">Message envoyé</h2>
@@ -154,7 +153,7 @@ export function ContactPage() {
               <button
                 type="button"
                 onClick={reset}
-                className="mt-6 rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                className="mt-6 rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
               >
                 Envoyer un autre message
               </button>
@@ -169,7 +168,7 @@ export function ContactPage() {
                   {USER_TYPES.map((t) => (
                     <label
                       key={t.value}
-                      className={`cursor-pointer rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-600 ${
+                      className={`cursor-pointer rounded-md border px-3 py-2.5 text-center text-sm font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-600 ${
                         userType === t.value
                           ? 'border-brand-700 bg-brand-700 text-white'
                           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -298,7 +297,7 @@ export function ContactPage() {
               </div>
 
               {serverError && (
-                <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+                <div role="alert" className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{serverError}</span>
                 </div>
@@ -308,7 +307,7 @@ export function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-700 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Send className="h-4 w-4" aria-hidden="true" />
                   {isSubmitting ? 'Envoi en cours…' : 'Envoyer ma demande'}
@@ -326,12 +325,12 @@ export function ContactPage() {
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6">
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
             <h2 className="font-display text-xl font-bold text-slate-900">Nous joindre directement</h2>
             <ul className="mt-4 space-y-4 text-sm">
               <li>
                 <a href={`mailto:${SITE.supportEmail}`} className="flex items-center gap-3 font-semibold text-slate-800 hover:text-brand-700">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700">
                     <Mail className="h-5 w-5" aria-hidden="true" />
                   </span>
                   {SITE.supportEmail}
@@ -340,7 +339,7 @@ export function ContactPage() {
               {wa && (
                 <li>
                   <a href={wa} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 font-semibold text-slate-800 hover:text-brand-700">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700">
                       <MessageCircle className="h-5 w-5" aria-hidden="true" />
                     </span>
                     Écrire sur WhatsApp
@@ -350,7 +349,7 @@ export function ContactPage() {
             </ul>
           </div>
 
-          <div className="rounded-3xl bg-sand-100 p-6">
+          <div className="rounded-lg bg-sand-100 p-6">
             <h2 className="font-display text-xl font-bold text-slate-900">Avant de nous écrire</h2>
             <dl className="mt-4 space-y-4 text-sm">
               <div>

@@ -139,7 +139,7 @@ export function DashboardOverviewPage() {
 
       {/* Verification status Banner */}
       {verificationStatus === 'pending' && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
+        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
           <div className="flex items-start gap-3">
             <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -161,7 +161,7 @@ export function DashboardOverviewPage() {
       )}
 
       {verificationStatus === 'unverified' && (
-        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-950">
+        <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-950">
           <div className="flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
             <div>
@@ -185,7 +185,7 @@ export function DashboardOverviewPage() {
 
       {/* Zero property banner if brand new account */}
       {!loading && totalProps === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs text-center sm:text-left sm:flex sm:items-center sm:justify-between gap-6">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs text-center sm:text-left sm:flex sm:items-center sm:justify-between gap-6">
           <div className="space-y-1">
             <h3 className="text-base font-bold text-slate-900">
               Bienvenue sur votre espace de gestion LoyerPro
@@ -209,7 +209,7 @@ export function DashboardOverviewPage() {
       {/* Top Metric Cards - Real computed values */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Properties */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Logements & Chambres</span>
             <Building className="h-4 w-4 text-slate-400" />
@@ -226,7 +226,7 @@ export function DashboardOverviewPage() {
         </div>
 
         {/* Metric 2: Active Tenants */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Locataires Actifs</span>
             <Users className="h-4 w-4 text-slate-400" />
@@ -246,7 +246,7 @@ export function DashboardOverviewPage() {
         </div>
 
         {/* Metric 3: Monthly Collected */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Loyers Encaissés</span>
             <CreditCard className="h-4 w-4 text-brand-600" />
@@ -262,7 +262,7 @@ export function DashboardOverviewPage() {
         </div>
 
         {/* Metric 4: Pending Visits */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Demandes de Visite</span>
             <Calendar className="h-4 w-4 text-amber-500" />
@@ -287,7 +287,7 @@ export function DashboardOverviewPage() {
       {/* Main Grid: Recent Payments & Visits */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Payments Section */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-slate-600" />
@@ -304,7 +304,7 @@ export function DashboardOverviewPage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-12 rounded-md bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : recentPayments.length > 0 ? (
@@ -349,7 +349,7 @@ export function DashboardOverviewPage() {
         </div>
 
         {/* Pending Visits Section */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-slate-600" />
@@ -366,7 +366,7 @@ export function DashboardOverviewPage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-12 rounded-md bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : pendingVisits.length > 0 ? (

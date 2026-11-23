@@ -59,7 +59,7 @@ export function PublicNavbar() {
 
       <header
         className={cn(
-          'sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur-md transition-shadow',
+          'sticky top-0 z-40 w-full border-b bg-white/90 transition-shadow',
           scrolled ? 'border-slate-200 shadow-sm' : 'border-transparent'
         )}
       >
@@ -100,7 +100,7 @@ export function PublicNavbar() {
                 )}
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
                 >
                   Mon espace
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -113,7 +113,7 @@ export function PublicNavbar() {
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                  className="inline-flex items-center rounded-md bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
                 >
                   Publier mon bien
                 </Link>
@@ -142,7 +142,7 @@ export function PublicNavbar() {
                   to={l.to}
                   className={({ isActive }) =>
                     cn(
-                      'rounded-xl px-4 py-3.5 text-base font-semibold',
+                      'rounded-md px-4 py-3.5 text-base font-semibold',
                       isActive ? 'bg-brand-50 text-brand-800' : 'text-slate-800 hover:bg-slate-50'
                     )
                   }
@@ -158,7 +158,7 @@ export function PublicNavbar() {
                 setMobileOpen(false);
                 setLocationOpen(true);
               }}
-              className="mt-4 flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+              className="mt-4 flex w-full items-center justify-between rounded-md border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
             >
               <span className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -171,21 +171,21 @@ export function PublicNavbar() {
             <div className="mt-6 flex flex-col gap-3">
               {user ? (
                 <>
-                  <Link to="/dashboard" className="rounded-xl bg-brand-700 px-4 py-3.5 text-center text-base font-semibold text-white">
+                  <Link to="/dashboard" className="rounded-md bg-brand-700 px-4 py-3.5 text-center text-base font-semibold text-white">
                     Mon espace
                   </Link>
                   {isSuperAdmin && (
-                    <Link to="/superadmin/dashboard" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-center text-base font-semibold text-amber-800">
+                    <Link to="/superadmin/dashboard" className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3.5 text-center text-base font-semibold text-amber-800">
                       SuperAdmin
                     </Link>
                   )}
                 </>
               ) : (
                 <>
-                  <Link to="/register" className="rounded-xl bg-brand-700 px-4 py-3.5 text-center text-base font-semibold text-white">
+                  <Link to="/register" className="rounded-md bg-brand-700 px-4 py-3.5 text-center text-base font-semibold text-white">
                     Publier mon bien
                   </Link>
-                  <Link to="/login" className="rounded-xl border border-slate-300 px-4 py-3.5 text-center text-base font-semibold text-slate-800">
+                  <Link to="/login" className="rounded-md border border-slate-300 px-4 py-3.5 text-center text-base font-semibold text-slate-800">
                     Connexion
                   </Link>
                 </>

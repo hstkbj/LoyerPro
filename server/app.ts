@@ -27,11 +27,11 @@ async function logEmail(toEmail: string, subject: string, template: string, stat
 
 const EMAIL_TEMPLATES: Record<string, (p: any) => { subject: string; html: string }> = {
   welcome: (p) => ({
-    subject: `Bienvenue sur LoyerPro, ${p.fullName} 👋`,
+    subject: `Bienvenue sur LoyerPro`,
     html: `<p>Bonjour ${p.fullName},</p><p>Votre compte LoyerPro (${p.role === 'agency' ? 'Agence' : 'Propriétaire'}) a bien été créé.</p><p>Vous êtes actuellement sur le plan <strong>${p.planName || 'Starter Gratuit'}</strong>. Connectez-vous pour ajouter vos premiers biens.</p><p>— L'équipe LoyerPro</p>`,
   }),
   account_verified: (p) => ({
-    subject: `Votre compte LoyerPro est vérifié ✅`,
+    subject: `Votre compte LoyerPro est vérifié`,
     html: `<p>Bonjour ${p.fullName},</p><p>Votre compte a été vérifié par notre équipe. Vos annonces peuvent désormais être publiées sur le portail public.</p><p>— L'équipe LoyerPro</p>`,
   }),
   account_rejected: (p) => ({
@@ -188,6 +188,7 @@ async function activatePaidSubscriptionFromTransaction(tx: any): Promise<{
   activated: boolean;
   alreadyProcessed?: boolean;
   reason?: string;
+  subscription?: any;
 }> {
   if (!tx || tx.status !== 'approved') {
     return { activated: false, reason: 'transaction_not_approved' };
@@ -216,7 +217,12 @@ async function activatePaidSubscriptionFromTransaction(tx: any): Promise<{
     .eq('fedapay_transaction_id', String(tx.id))
     .maybeSingle();
   if (existingTx) {
-    return { activated: true, alreadyProcessed: true };
+    const { data: existingSub } = await admin
+      .from('subscriptions')
+      .select('*, plan:plan_id(*)')
+      .eq('transaction_id', String(tx.id))
+      .maybeSingle();
+    return { activated: true, alreadyProcessed: true, subscription: existingSub || undefined };
   }
 
   const { data: plan, error: planErr } = await admin
@@ -260,7 +266,7 @@ async function activatePaidSubscriptionFromTransaction(tx: any): Promise<{
       transaction_id: String(tx.id),
       payment_gateway: 'fedapay',
     })
-    .select('*')
+    .select('*, plan:plan_id(*)')
     .single();
 
   if (subErr) {
@@ -309,7 +315,18 @@ async function activatePaidSubscriptionFromTransaction(tx: any): Promise<{
     console.warn('[FedaPay] Email de confirmation non envoyé:', emailErr?.message);
   }
 
-  return { activated: true };
+  return { activated: true, subscription };
+}
+
+// Identifie l'utilisateur à partir du jeton de session Supabase envoyé par le navigateur.
+async function getUserFromBearer(req: express.Request) {
+  const admin = getSupabaseAdmin();
+  const header = String(req.headers.authorization || '');
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!admin || !token) return null;
+  const { data, error } = await admin.auth.getUser(token);
+  if (error || !data?.user) return null;
+  return { admin, user: data.user };
 }
 
 async function getGoogleAccessToken(): Promise<string | null> {
@@ -489,7 +506,7 @@ export function createApp() {
         }
 
         const isApproved = tx.status === 'approved';
-        let activation: { activated: boolean; alreadyProcessed?: boolean; reason?: string } | null = null;
+        let activation: Awaited<ReturnType<typeof activatePaidSubscriptionFromTransaction>> | null = null;
 
         if (isApproved) {
           // ⚠️ On ne fait JAMAIS confiance à un statut envoyé par le
@@ -507,6 +524,7 @@ export function createApp() {
           verified: true,
           approved: isApproved,
           activated: activation?.activated || false,
+          subscription: activation?.subscription,
           notice: isApproved
             ? undefined
             : `Statut FedaPay actuel : ${tx.status}. L'abonnement ne sera activé qu'après approbation.`,
@@ -537,6 +555,29 @@ export function createApp() {
         pending: true,
         error: error.message || 'Erreur de vérification FedaPay',
       });
+    }
+  });
+
+  // Abonnement courant de l'utilisateur connecté, lu côté serveur. Sert de
+  // secours quand le navigateur n'arrive pas à joindre Supabase directement
+  // (réseau mobile instable, coupures de connexion).
+  app.get('/api/subscription/me', async (req, res) => {
+    try {
+      const auth = await getUserFromBearer(req);
+      if (!auth) return res.status(401).json({ error: 'Session invalide ou expirée.' });
+      const { data, error } = await auth.admin
+        .from('subscriptions')
+        .select('*, plan:plan_id(*)')
+        .eq('user_id', auth.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return res.status(500).json({ error: 'Lecture de l\'abonnement impossible.' });
+      res.setHeader('Cache-Control', 'no-store');
+      return res.json({ subscription: data || null });
+    } catch (e: any) {
+      console.error('[subscription/me]', e?.message);
+      return res.status(500).json({ error: 'Erreur serveur.' });
     }
   });
 

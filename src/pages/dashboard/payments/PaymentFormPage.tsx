@@ -136,7 +136,7 @@ export function PaymentFormPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="space-y-1.5 text-left">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
               Contrat / Bien & Locataire <span className="text-rose-500">*</span>
@@ -148,7 +148,7 @@ export function PaymentFormPage() {
             >
               {contracts.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.property?.title} — Locataire: {c.tenant?.full_name}
+                  {c.property?.title} · Locataire : {c.tenant?.full_name}
                 </option>
               ))}
             </select>

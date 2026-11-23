@@ -77,7 +77,7 @@ export function PricingPage() {
           return (
               <div
                 key={plan.id}
-                className={`flex flex-col justify-between rounded-2xl p-6 sm:p-8 bg-white border transition-all ${
+                className={`flex flex-col justify-between rounded-lg p-6 sm:p-8 bg-white border transition-all ${
                   isPro
                     ? 'border-slate-900 shadow-md ring-2 ring-slate-900 relative'
                     : 'border-slate-200 shadow-xs hover:border-slate-300'
@@ -136,7 +136,7 @@ export function PricingPage() {
       </div>
 
       {/* Payment Security & Methods */}
-      <div className="rounded-2xl bg-slate-900 text-white p-8 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div className="rounded-lg bg-slate-900 text-white p-8 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-brand-400 text-xs font-bold uppercase tracking-wider">
             <ShieldCheck className="h-4 w-4" />
@@ -150,11 +150,11 @@ export function PricingPage() {
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
+          <div className="p-2.5 rounded-md bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
             <Smartphone className="h-4 w-4 text-brand-400" />
             <span>Mobile Money</span>
           </div>
-          <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
+          <div className="p-2.5 rounded-md bg-slate-800 border border-slate-700 flex items-center gap-2 text-xs font-semibold">
             <CreditCard className="h-4 w-4 text-blue-400" />
             <span>Cartes CB</span>
           </div>

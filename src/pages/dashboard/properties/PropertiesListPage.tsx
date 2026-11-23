@@ -122,7 +122,7 @@ export function PropertiesListPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 rounded-xl bg-slate-200 animate-pulse" />
+            <div key={i} className="h-64 rounded-md bg-slate-200 animate-pulse" />
           ))}
         </div>
       ) : properties.length === 0 ? (
@@ -134,7 +134,7 @@ export function PropertiesListPage() {
           onAction={() => navigate('/dashboard/properties/create')}
         />
       ) : filteredProperties.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
+        <div className="rounded-md border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
           Aucun bien ne correspond à votre recherche "{search}".
         </div>
       ) : (
@@ -144,7 +144,7 @@ export function PropertiesListPage() {
             return (
               <div
                 key={property.id}
-                className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden"
+                className="flex flex-col rounded-md border border-slate-200 bg-white shadow-xs overflow-hidden"
               >
                 {/* Image */}
                 <div className="relative aspect-16/9 bg-slate-100">

@@ -151,7 +151,7 @@ export function RegisterPage() {
   if (awaitingConfirmation) {
     return (
       <div className="min-h-[85vh] flex flex-col justify-center items-center py-12 px-4 bg-slate-50 text-center">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-xs p-8 space-y-4">
+        <div className="max-w-md w-full bg-white rounded-lg border border-slate-200 shadow-xs p-8 space-y-4">
           <div className="mx-auto h-14 w-14 rounded-full bg-brand-100 flex items-center justify-center">
             <MailCheck className="h-7 w-7 text-brand-600" />
           </div>
@@ -193,9 +193,9 @@ export function RegisterPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-md">
+        <div className="bg-white py-8 px-6 sm:px-10 rounded-lg border border-slate-200 shadow-md">
           {error && (
-            <div role="alert" className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+            <div role="alert" className="mb-6 p-3.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -212,7 +212,7 @@ export function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setRole('owner')}
-                  className={`py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all ${
+                  className={`py-2.5 px-3 text-xs font-bold rounded-md border text-center transition-all ${
                     role === 'owner'
                       ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -223,7 +223,7 @@ export function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setRole('agency')}
-                  className={`py-2.5 px-3 text-xs font-bold rounded-xl border text-center transition-all ${
+                  className={`py-2.5 px-3 text-xs font-bold rounded-md border text-center transition-all ${
                     role === 'agency'
                       ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -267,7 +267,7 @@ export function RegisterPage() {
                     const found = availableCountries.find((c) => c.name === e.target.value);
                     if (found && found.cities[0]) setCity(found.cities[0]);
                   }}
-                  className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
                 >
                   {availableCountries.map((c) => (
                     <option key={c.code} value={c.name}>
@@ -284,7 +284,7 @@ export function RegisterPage() {
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
                 >
                   {activeCountryObj.cities.map((cty) => (
                     <option key={cty} value={cty}>
@@ -380,7 +380,7 @@ export function RegisterPage() {
                 </div>
 
                 {/* Upload zone */}
-                <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50/70 hover:bg-slate-100/70 transition-colors">
+                <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-md p-4 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50/70 hover:bg-slate-100/70 transition-colors">
                   <Upload className="h-6 w-6 text-slate-400" />
                   <div className="text-center">
                     <span className="text-xs font-bold text-slate-800">
@@ -410,7 +410,7 @@ export function RegisterPage() {
                       {uploadedDocs.map((doc) => (
                         <div
                           key={doc.id}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-brand-50/60 border border-brand-200 text-xs"
+                          className="flex items-center justify-between p-2.5 rounded-md bg-brand-50/60 border border-brand-200 text-xs"
                         >
                           <div className="flex items-center gap-2 truncate">
                             <FileCheck className="h-4 w-4 text-brand-600 shrink-0" />

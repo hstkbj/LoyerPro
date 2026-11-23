@@ -114,7 +114,7 @@ export function FinancialReportsPage() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Revenues */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Total Loyers Encaissés
@@ -130,7 +130,7 @@ export function FinancialReportsPage() {
         </div>
 
         {/* Total Expenses */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Total Charges & Travaux
@@ -146,7 +146,7 @@ export function FinancialReportsPage() {
         </div>
 
         {/* Net Income */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">
               Revenu Net Réel
@@ -165,7 +165,7 @@ export function FinancialReportsPage() {
       {/* Category breakdown and details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Expenses by Category */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
             Répartition des dépenses par catégorie
           </h2>
@@ -199,7 +199,7 @@ export function FinancialReportsPage() {
         </div>
 
         {/* Portefeuille Summary */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">
             Capacité d'encaissement du portefeuille
           </h2>

@@ -146,11 +146,11 @@ export function SuperAdminPlansPage() {
       </div>
 
       {loading ? (
-        <div className="h-48 rounded-xl bg-slate-200 animate-pulse" />
+        <div className="h-48 rounded-md bg-slate-200 animate-pulse" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {plans.map((plan) => (
-            <div key={plan.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-3">
+            <div key={plan.id} className="rounded-md border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-3">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">

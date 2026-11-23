@@ -110,7 +110,7 @@ export function SuperAdminUsersPage() {
 
       {/* Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-md border border-slate-200 text-xs w-full sm:w-auto">
           <button
             onClick={() => setFilterStatus('all')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
@@ -157,19 +157,19 @@ export function SuperAdminUsersPage() {
             placeholder="Rechercher nom, agence, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-slate-900"
+            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-md border border-slate-200 bg-white focus:outline-none focus:border-slate-900"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="h-48 rounded-xl bg-slate-200 animate-pulse" />
+        <div className="h-48 rounded-md bg-slate-200 animate-pulse" />
       ) : filteredUsers.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-500">
+        <div className="rounded-lg border border-slate-200 bg-white p-12 text-center text-xs text-slate-500">
           Aucun utilisateur trouvé pour ce filtre.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 font-bold text-slate-600">
               <tr>
@@ -216,7 +216,7 @@ export function SuperAdminUsersPage() {
                         </span>
                       )}
                       {status === 'pending' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                           <Clock className="h-3.5 w-3.5 text-amber-600" />
                           Audit Requis
                         </span>
@@ -307,8 +307,8 @@ export function SuperAdminUsersPage() {
 
       {/* Modal to view submitted verification documents */}
       {selectedDocUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-sm border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
@@ -336,7 +336,7 @@ export function SuperAdminUsersPage() {
                 {selectedDocUser.verification_documents?.map((doc) => (
                   <div
                     key={doc.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5"
+                    className="p-3.5 rounded-md border border-slate-200 bg-slate-50 space-y-2.5"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-900 uppercase">

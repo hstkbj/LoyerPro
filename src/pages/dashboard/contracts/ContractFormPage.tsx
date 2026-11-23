@@ -159,7 +159,7 @@ export function ContractFormPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5 text-left">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">

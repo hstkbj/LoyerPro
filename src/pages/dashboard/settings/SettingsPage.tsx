@@ -146,7 +146,7 @@ export function SettingsPage() {
     openFedaPayCheckout({
       amount: rawPlan.price,
       currency: rawPlan.currency || 'XOF',
-      description: `Abonnement LoyerPro — ${rawPlan.name}`,
+      description: `Abonnement LoyerPro : ${rawPlan.name}`,
       customerEmail: profile?.email,
       customerFirstname: profile?.full_name?.split(' ')[0],
       customerLastname: profile?.full_name?.split(' ').slice(1).join(' ') || profile?.full_name,
@@ -164,7 +164,7 @@ export function SettingsPage() {
             // l'utilisateur, le webhook FedaPay confirmera l'activation
             // automatiquement dès sa réception.
             setPaymentNotice(
-              `Paiement en cours de confirmation (réf. ${transactionId}). Votre abonnement s'activera automatiquement d'ici quelques instants — rechargez la page dans une minute.`
+              `Paiement en cours de confirmation (réf. ${transactionId}). Votre abonnement s'activera automatiquement d'ici quelques instants. Rechargez la page dans une minute.`
             );
           } else {
             setPaymentError(
@@ -176,9 +176,16 @@ export function SettingsPage() {
         }
 
         try {
-          await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, String(transactionId));
-          await refreshSubscription();
-          setPaymentNotice(`🎉 Félicitations ! Votre forfait ${rawPlan.name} est activé avec succès.`);
+          // Le serveur a déjà vérifié le paiement auprès de FedaPay et activé
+          // l'abonnement : on utilise sa réponse directement, sans dépendre
+          // d'une relecture de Supabase depuis le navigateur.
+          if (verification.activated && verification.subscription) {
+            setCurrentSubscription(verification.subscription);
+          } else {
+            await subscriptionService.upgradeSubscription(rawPlan.id, 'FedaPay', profile?.id, String(transactionId));
+            await refreshSubscription();
+          }
+          setPaymentNotice(`Votre forfait ${rawPlan.name} est activé avec succès.`);
         } catch (err: any) {
           console.error('[SettingsPage] upgradeSubscription error:', err);
           setPaymentNotice('');
@@ -331,9 +338,9 @@ export function SettingsPage() {
 
       {/* Profile Tab */}
       {activeTab === 'profile' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs max-w-2xl space-y-6">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs max-w-2xl space-y-6">
           {profileSaved && (
-            <div className="p-3.5 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
+            <div className="p-3.5 rounded-md bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-600" />
               <span>Vos informations ont été mises à jour avec succès.</span>
             </div>
@@ -368,7 +375,7 @@ export function SettingsPage() {
                     const found = availableCountries.find((c) => c.name === e.target.value);
                     if (found && found.cities[0]) setCity(found.cities[0]);
                   }}
-                  className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
                 >
                   {availableCountries.map((c) => (
                     <option key={c.code} value={c.name}>
@@ -385,7 +392,7 @@ export function SettingsPage() {
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 focus:border-slate-900 focus:outline-none"
                 >
                   {activeCountryObj.cities.map((cty) => (
                     <option key={cty} value={cty}>
@@ -416,7 +423,7 @@ export function SettingsPage() {
       {activeTab === 'verification' && (
         <div className="space-y-6 max-w-3xl">
           {/* Status Banner */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="h-6 w-6 text-brand-600" />
@@ -437,7 +444,7 @@ export function SettingsPage() {
                 </span>
               )}
               {verificationStatus === 'pending' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
                   <Clock className="h-4 w-4 text-amber-600" />
                   Audit en cours (24h)
                 </span>
@@ -449,7 +456,7 @@ export function SettingsPage() {
               )}
             </div>
 
-            <div className="text-xs text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-200 leading-relaxed">
+            <div className="text-xs text-slate-600 bg-slate-50 p-4 rounded-md border border-slate-200 leading-relaxed">
               {verificationStatus === 'verified'
                 ? 'Félicitations ! Votre profil est validé par notre équipe. Toutes vos annonces de chambres et biens bénéficient de la mention prioritaire "Bailleur Certifié CNI".'
                 : verificationStatus === 'pending'
@@ -459,7 +466,7 @@ export function SettingsPage() {
           </div>
 
           {/* Existing Documents */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Pièces d'identité enregistrées ({existingDocs.length})
             </h4>
@@ -473,7 +480,7 @@ export function SettingsPage() {
                 {existingDocs.map((doc) => (
                   <div
                     key={doc.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2 text-xs"
+                    className="p-3.5 rounded-md border border-slate-200 bg-slate-50 space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-900 uppercase">
@@ -497,20 +504,20 @@ export function SettingsPage() {
           </div>
 
           {/* Upload New Document */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
               Ajouter une nouvelle pièce d'identité
             </h4>
 
             {uploadSuccess && (
-              <div className="p-3 rounded-xl bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
+              <div className="p-3 rounded-md bg-brand-50 border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-brand-600" />
                 <span>Documents envoyés avec succès. Notre équipe les traitera sous 24h.</span>
               </div>
             )}
 
             {uploadError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+              <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-rose-600" />
                 <span>{uploadError}</span>
               </div>
@@ -555,7 +562,7 @@ export function SettingsPage() {
               </button>
             </div>
 
-            <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100/80 transition-colors">
+            <label className="border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-md p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100/80 transition-colors">
               <Upload className="h-6 w-6 text-slate-400" />
               <div className="text-center">
                 <span className="text-xs font-bold text-slate-800">
@@ -579,7 +586,7 @@ export function SettingsPage() {
                 {newDocs.map((d) => (
                   <div
                     key={d.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs"
+                    className="flex items-center justify-between p-2.5 rounded-md bg-blue-50 border border-blue-200 text-xs"
                   >
                     <div className="flex items-center gap-2 truncate">
                       <FileText className="h-4 w-4 text-blue-600 shrink-0" />
@@ -617,19 +624,19 @@ export function SettingsPage() {
       {activeTab === 'subscription' && (
         <div className="space-y-6">
           {!subLoading && !currentSubscription && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm p-4 flex items-start gap-3">
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-sm p-4 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Choisissez un forfait pour continuer</p>
                 <p className="text-xs mt-0.5">
                   Le reste du tableau de bord (biens, locataires, contrats...) reste inaccessible tant que vous
-                  n'avez pas activé un forfait ci-dessous — même le forfait gratuit, en un clic.
+                  n'avez pas activé un forfait ci-dessous (même le forfait gratuit, en un clic).
                 </p>
               </div>
             </div>
           )}
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 Formule active
@@ -652,20 +659,20 @@ export function SettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-md border border-slate-200">
               <Smartphone className="h-4 w-4 text-brand-600" />
               <span>Mobile Money & Cartes Bancaires</span>
             </div>
           </div>
 
           {paymentError && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs p-3 flex items-start gap-2">
+            <div className="rounded-md border border-rose-200 bg-rose-50 text-rose-800 text-xs p-3 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{paymentError}</span>
             </div>
           )}
           {paymentNotice && (
-            <div className="rounded-xl border border-brand-200 bg-brand-50 text-brand-800 text-xs p-3 flex items-start gap-2">
+            <div className="rounded-md border border-brand-200 bg-brand-50 text-brand-800 text-xs p-3 flex items-start gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{paymentNotice}</span>
             </div>
@@ -681,7 +688,7 @@ export function SettingsPage() {
               return (
                 <div
                   key={p.id}
-                  className={`rounded-2xl border p-6 bg-white space-y-4 flex flex-col justify-between ${
+                  className={`rounded-lg border p-6 bg-white space-y-4 flex flex-col justify-between ${
                     isRecommended ? 'border-slate-900 ring-2 ring-slate-900 shadow-md' : 'border-slate-200'
                   } ${isCurrentPlan ? 'ring-2 ring-brand-500' : ''}`}
                 >

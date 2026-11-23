@@ -47,14 +47,14 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
+        className="fixed inset-0 bg-slate-900/60 transition-opacity" 
         onClick={onClose} 
       />
 
       {/* Modal Dialog */}
       <div
         className={cn(
-          'relative w-full rounded-xl bg-white shadow-xl border border-slate-200 p-6 z-10 max-h-[90vh] overflow-y-auto',
+          'relative w-full rounded-md bg-white shadow-sm border border-slate-200 p-6 z-10 max-h-[90vh] overflow-y-auto',
           maxWidths[maxWidth]
         )}
       >

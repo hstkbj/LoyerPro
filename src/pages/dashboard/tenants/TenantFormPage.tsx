@@ -120,7 +120,7 @@ export function TenantFormPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <Input
             label="Nom & Prénoms complets"
             required

@@ -192,7 +192,7 @@ export function PropertyFormPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-2">
             1. Informations Principales
           </h3>
@@ -251,7 +251,7 @@ export function PropertyFormPage() {
         </div>
 
         {/* Location & Specs */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-2">
             2. Localisation & Spécifications
           </h3>
@@ -317,7 +317,7 @@ export function PropertyFormPage() {
         </div>
 
         {/* Photos Upload */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-2">
             3. Photos du bien
           </h3>
@@ -359,7 +359,7 @@ export function PropertyFormPage() {
         </div>
 
         {/* Amenities & Conditions */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-2">
             4. Équipements & Modalités de bail
           </h3>

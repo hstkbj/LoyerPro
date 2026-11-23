@@ -124,7 +124,7 @@ export function ExpenseFormPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="rounded-md border border-slate-200 bg-white p-5 shadow-xs space-y-4">
           <div className="space-y-1.5 text-left">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
               Bien concerné <span className="text-rose-500">*</span>

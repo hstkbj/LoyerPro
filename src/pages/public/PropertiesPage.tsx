@@ -17,7 +17,6 @@ import {
   MapPin,
   Bed,
   Bath,
-  Zap,
 } from 'lucide-react';
 
 export function PropertiesPage() {
@@ -114,7 +113,7 @@ export function PropertiesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setLocationModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs"
           >
             <MapPin className="h-4 w-4 text-brand-600" />
             <span>Localité : <strong>{currentCountry.flag} {currentCountry.name}</strong> ({currentCity || 'Toutes'})</span>
@@ -125,7 +124,7 @@ export function PropertiesPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 shadow-xs space-y-4">
         <form onSubmit={handleSearchSubmit} className="flex gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -134,7 +133,7 @@ export function PropertiesPage() {
               placeholder="Rechercher par quartier, standing, mot-clé (ex: Cocody, Almadies, Bastos, climatisé)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-xl border border-slate-300 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none focus:border-slate-900"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-slate-300 text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none focus:border-slate-900"
             />
           </div>
           <Button type="submit" variant="primary" size="md">
@@ -279,7 +278,6 @@ export function PropertiesPage() {
                 className="rounded text-brand-600 focus:ring-brand-500"
               />
               <span className="flex items-center gap-1">
-                <Zap className="h-3.5 w-3.5 text-amber-500" />
                 Charges comprises
               </span>
             </label>
@@ -299,7 +297,7 @@ export function PropertiesPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-72 rounded-2xl bg-slate-100 animate-pulse border border-slate-200" />
+            <div key={n} className="h-72 rounded-lg bg-slate-100 animate-pulse border border-slate-200" />
           ))}
         </div>
       ) : properties.length > 0 ? (
