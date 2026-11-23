@@ -35,6 +35,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PENDING_DOCS_PREFIX = 'loyerpro_pending_docs:';
+
+function stashPendingDocuments(email: string, docs?: VerificationDocument[]) {
+  if (!docs || docs.length === 0) return;
+  try {
+    localStorage.setItem(PENDING_DOCS_PREFIX + email.toLowerCase(), JSON.stringify(docs));
+  } catch {
+    // Stockage plein ou indisponible : l'utilisateur pourra renvoyer ses documents depuis Paramètres > Vérification.
+  }
+}
+
+// Envoie au profil les documents saisis à l'inscription lorsque l'email n'était
+// pas encore confirmé (pas de session à ce moment-là).
+async function flushPendingDocuments(supabase: any, prof: Profile, email: string): Promise<Profile | null> {
+  const key = PENDING_DOCS_PREFIX + email.toLowerCase();
+  let docs: VerificationDocument[] = [];
+  try {
+    docs = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch {
+    docs = [];
+  }
+  if (!docs.length) return null;
+  const updates = {
+    verification_documents: [...(prof.verification_documents || []), ...docs],
+    verification_status: 'pending' as VerificationStatus,
+  };
+  const { error } = await supabase.from('profiles').update(updates).eq('id', prof.id);
+  if (error) return null;
+  try { localStorage.removeItem(key); } catch { /* ignore */ }
+  return { ...prof, ...updates };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<{ id: string; email: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -215,7 +247,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setUser({ id: data.user.id, email: data.user.email || '' });
-        if (prof) setProfile(prof as Profile);
+        if (prof) {
+          setProfile(prof as Profile);
+          flushPendingDocuments(supabase, prof as Profile, data.user.email || email)
+            .then((updated) => { if (updated) setProfile(updated); })
+            .catch(() => {});
+        }
       }
       return {};
     } else {
@@ -270,14 +307,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             agency_name: params.agencyName || null,
             country: params.country,
             city: params.city,
-            verification_status: status,
-            // Important : c'est le trigger handle_new_user() (base de
-            // données, migration 0004) qui lit ces métadonnées pour créer
-            // le profil complet. On ne peut pas compter sur un upsert
-            // client juste après, car tant que l'email n'est pas confirmé
-            // il n'y a pas de session active et les policies RLS bloquent
-            // l'écriture.
-            verification_documents: params.verificationDocuments || [],
+            // Les pièces d'identité ne doivent JAMAIS être placées dans ces
+            // métadonnées : elles sont recopiées dans le jeton de connexion
+            // (JWT) envoyé à chaque requête. Quelques centaines de Ko suffisent
+            // à faire refuser toutes les requêtes ("header too large"),
+            // c'est-à-dire un site inutilisable. Les documents sont enregistrés
+            // dans la table "profiles" (voir plus bas et flushPendingDocuments).
+            verification_status: 'unverified',
           },
         },
       });
@@ -288,6 +324,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // connecté ni le renvoyer vers /dashboard dans ce cas : la session
       // n'existe pas encore, aucune requête authentifiée ne fonctionnera.
       if (!data.session) {
+        // Les documents sont conservés sur cet appareil et envoyés au profil
+        // à la première connexion, une fois l'email confirmé.
+        stashPendingDocuments(params.email, params.verificationDocuments);
         return { requiresEmailConfirmation: true };
       }
 
